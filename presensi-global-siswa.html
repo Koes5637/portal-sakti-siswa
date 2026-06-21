@@ -230,7 +230,10 @@
                                 <button onclick="studentApp.selectPermitType('i')" id="btn-i" class="permit-type-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold transition-all text-sm tracking-wider">IZIN</button>
                             </div>
                         </div>
-                        
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Keterangan Singkat</label>
+                            <input type="text" id="permit-short-reason" class="glow-input w-full p-4 rounded-xl text-sm font-sans mb-4" placeholder="Cth: Surat Dokter, Acara Keluarga...">
+                        </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Alasan Detail</label>
                             <textarea id="permit-reason" rows="3" class="glow-input w-full p-4 rounded-xl text-sm font-sans resize-none" placeholder="Tuliskan keterangan lengkap..."></textarea>
@@ -430,7 +433,7 @@
 
             async checkTodayAttendance() {
                 if (!this.user) return;
-                const today = new Date().toISOString().split('T')[0];
+                const today = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
                 const docId = `${today}_${this.nis}`;
                 
                 try {
@@ -497,7 +500,7 @@
                     const limit = new Date(now); limit.setHours(h, m, 0, 0);
                     const status = now > limit ? 'Terlambat' : 'Tepat Waktu';
 
-                    const today = now.toISOString().split('T')[0];
+                    const today = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
                     
                     await setDoc(doc(db, PATH_ATTENDANCE, `${today}_${this.nis}`), {
                         nis: this.nis,
@@ -580,17 +583,18 @@
 
             async submitPermit() {
                 const reason = document.getElementById('permit-reason').value.trim();
+                const shortReason = document.getElementById('permit-short-reason').value.trim();
                 const btn = document.getElementById('btn-submit-permit');
 
-                if (!this.user || !reason || !this.permitImageBase64) { 
-                    alert("Lengkapi alasan dan foto bukti!"); return; 
+                if (!this.user || !reason || !shortReason || !this.permitImageBase64) { 
+                    alert("Lengkapi Keterangan Singkat, Alasan Detail, dan Foto Bukti!"); return; 
                 }
 
                 btn.disabled = true;
                 btn.innerText = "MENGIRIM DATA...";
 
                 try {
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
                     const docId = `${today}_${this.nis}`;
                     
                     await setDoc(doc(db, PATH_IZIN, docId), {
@@ -598,6 +602,7 @@
                         nama: this.studentData.nama,
                         kelas: this.studentData.kelas,
                         tipe: this.permitType,
+                        keterangan_singkat: shortReason,
                         alasan: reason,
                         foto: this.permitImageBase64,
                         timestamp: serverTimestamp()
