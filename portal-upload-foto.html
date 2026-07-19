@@ -131,7 +131,7 @@
         <div class="p-8 space-y-6 min-h-[300px]">
             
             <!-- Step 1: Input NIS -->
-            <div id="step-1" class="space-y-6 animate-fade-in">
+            <div id="step-1" class="hidden space-y-6 animate-fade-in">
                 <div class="text-center mb-4">
                     <div class="w-16 h-16 bg-cyan-900/20 border border-neon-blue/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_15px_rgba(0,243,255,0.2)]">
                         <svg class="w-8 h-8 text-neon-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .883-.393 1.627-1 1.94a.5.5 0 01-.65-.65l2-5a.5.5 0 01.11-.17l5 5c.42.5.45 1.22-.07 1.67a.5.5 0 01-.65.05L14 6"></path></svg>
@@ -219,29 +219,31 @@
         import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-        // KONFIGURASI FIREBASE ANDA
-        const firebaseConfig = {
-            apiKey: "AIzaSyAwIwimlyrE4qQqYa2gA8Pfygd59USsveQ",
-            authDomain: "aplikasi-ulangan-01.firebaseapp.com",
-            projectId: "aplikasi-ulangan-01",
-            storageBucket: "aplikasi-ulangan-01.firebasestorage.app",
-            messagingSenderId: "409085062439",
-            appId: "1:409085062439:web:280589d1a3e12e7b980d02",
-        };
-
-        const app = initializeApp(firebaseConfig);
+        // --- JALAN PINTAS NINJA: AMBIL CONFIG DINAMIS DARI MEMORI BROWSER ---
+            const savedConfigStr = localStorage.getItem('sakti_school_config');
+            if (!savedConfigStr) {
+                alert("Sesi tidak valid! Kembali ke Dashboard.");
+                window.location.href = 'Dashboard Siswa.html';
+                throw new Error("Berhenti: Sesi tidak valid"); 
+            }
+            
+            const dynamicFirebaseConfig = JSON.parse(savedConfigStr);
+            const app = initializeApp(dynamicFirebaseConfig);
         const db = getFirestore(app);
         const storage = getStorage(app);
         const auth = getAuth(app);
 
-        let currentStudentId = null;
+        let currentStudentId = localStorage.getItem('student_nis');
         let compressedImageBase64 = null;
 
-        // AUTHENTICATION INIT (PENTING AGAR TIDAK ERROR PERMISSION)
+        // AUTHENTICATION INIT & OTOMATIS MASUK (SSO)
         (async function() {
             try {
                 await signInAnonymously(auth);
-                console.log("Connected as Anonymous");
+                if (currentStudentId) {
+                    document.getElementById('input-nis').value = currentStudentId;
+                    window.checkNIS(); // Langsung proses tanpa minta klik
+                }
             } catch (error) {
                 console.error("Auth Error:", error);
             }
@@ -271,12 +273,14 @@
                     document.getElementById('step-2').classList.remove('hidden');
                 } else {
                     alert("NIS TIDAK DITEMUKAN DI DATABASE.");
+                    document.getElementById('step-1').classList.remove('hidden'); // Munculkan kotak jika gagal
                     nisInput.value = '';
                     nisInput.focus();
                 }
             } catch (e) {
                 console.error(e);
                 alert("ERROR KONEKSI (Cek Internet/Database): " + e.message);
+                document.getElementById('step-1').classList.remove('hidden'); // Munculkan kotak jika error
             } finally {
                 showLoading(false);
             }
