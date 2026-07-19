@@ -318,16 +318,16 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAwIwimlyrE4qQqYa2gA8Pfygd59USsveQ",
-            authDomain: "aplikasi-ulangan-01.firebaseapp.com",
-            projectId: "aplikasi-ulangan-01",
-            storageBucket: "aplikasi-ulangan-01.firebasestorage.app",
-            messagingSenderId: "409085062439",
-            appId: "1:409085062439:web:280589d1a3e12e7b980d02",
-        };
-
-        const appInit = initializeApp(firebaseConfig);
+        // --- JALAN PINTAS NINJA KHUSUS ---
+        const savedConfigStr = localStorage.getItem('sakti_school_config');
+        if (!savedConfigStr) {
+            alert("Akses ditolak! Silakan login terlebih dahulu melalui Portal Siswa SAKTI.");
+            window.location.href = 'Dashboard Siswa.html';
+            throw new Error("Sesi tidak valid");
+        }
+        
+        const dynamicFirebaseConfig = JSON.parse(savedConfigStr);
+        const appInit = initializeApp(dynamicFirebaseConfig); // Menggunakan appInit sesuai kode aslinya
         const db = getFirestore(appInit);
         const auth = getAuth(appInit);
 
