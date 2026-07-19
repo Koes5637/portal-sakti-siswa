@@ -134,7 +134,7 @@
         </div>
 
         <!-- STEP 1: VERIFIKASI SISWA -->
-        <div id="step-1" class="space-y-6">
+        <div id="step-1" class="hidden space-y-6">
             <div class="relative">
                 <label class="block text-neon-blue text-xs font-bold mb-2 tracking-wider">NOMOR INDUK SISWA (NIS)</label>
                 <input type="text" id="student-nis" placeholder="Contoh: 2425.10.001" 
@@ -186,22 +186,36 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // CONFIG (SAMA DENGAN FILE PIKET)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAwIwimlyrE4qQqYa2gA8Pfygd59USsveQ",
-            authDomain: "aplikasi-ulangan-01.firebaseapp.com",
-            projectId: "aplikasi-ulangan-01",
-            storageBucket: "aplikasi-ulangan-01.firebasestorage.app",
-            messagingSenderId: "409085062439",
-            appId: "1:409085062439:web:280589d1a3e12e7b980d02",
-        };
-
-        const app = initializeApp(firebaseConfig);
+        // --- JALAN PINTAS NINJA: AMBIL CONFIG DINAMIS DARI MEMORI BROWSER ---
+            const savedConfigStr = localStorage.getItem('sakti_school_config');
+            if (!savedConfigStr) {
+                alert("Sesi tidak valid! Kembali ke Dashboard.");
+                window.location.href = 'Dashboard Siswa.html';
+                throw new Error("Berhenti: Sesi tidak valid"); 
+            }
+            
+            const dynamicFirebaseConfig = JSON.parse(savedConfigStr);
+            const app = initializeApp(dynamicFirebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        let currentStudentId = null;
+        let currentStudentId = localStorage.getItem('student_nis');
+
+        // AUTHENTICATION INIT & OTOMATIS MASUK (SSO)
+        (async function() {
+            try {
+                await signInAnonymously(auth);
+                if (currentStudentId) {
+                    document.getElementById('student-nis').value = currentStudentId;
+                    window.checkStudent(); // Langsung proses tanpa minta klik
+                }
+            } catch (error) {
+                console.error("Auth Error:", error);
+            }
+        })();
 
         // FUNGSI AUTO FORMAT NIS (UNTUK HP TANPA TITIK)
         window.formatNIS = (input) => {
@@ -247,6 +261,7 @@
                     if (data.hp_ortu && data.hp_ortu.trim() !== "") {
                         alert("NOMOR WA SUDAH TERDAFTAR!\n\nAnda hanya dapat mengirim data satu kali. Silakan melapor ke Wali Kelas jika Anda ingin mereset/mengganti nomor WA.");
                         document.getElementById('student-nis').value = '';
+                        document.getElementById('step-1').classList.remove('hidden'); // Munculkan kotak kembali
                         return; // Hentikan proses di sini
                     }
 
@@ -260,10 +275,12 @@
                     document.getElementById('step-2').classList.remove('hidden');
                 } else {
                     alert("Data Siswa tidak ditemukan! Pastikan NIS benar (termasuk titik).");
+                    document.getElementById('step-1').classList.remove('hidden'); // Munculkan kotak jika gagal
                 }
             } catch (error) {
                 console.error("Error:", error);
                 alert("Terjadi kesalahan koneksi: " + error.message);
+                document.getElementById('step-1').classList.remove('hidden'); // Munculkan kotak jika error
             } finally {
                 showLoading(false);
             }
