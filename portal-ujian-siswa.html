@@ -626,6 +626,9 @@
             }
         }
 
+        // --- DETEKTOR PERANGKAT APPLE (iOS/iPadOS) ---
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
         document.addEventListener("visibilitychange", () => {
             if (window.isUploading || isSubmitting || document.getElementById('screen-exam').classList.contains('hidden')) return;
             if (document.hidden) triggerWarning("GANTI TAB / MINIMIZE!", "Anda terdeteksi meninggalkan halaman ujian.");
@@ -633,9 +636,17 @@
 
         window.addEventListener("blur", () => {
             if (window.isUploading || isSubmitting || document.getElementById('screen-exam').classList.contains('hidden')) return;
+            
+            // PENJINAK IOS 1: Abaikan blur jika siswa sedang mengetik (Keyboard Apple muncul/hilang)
+            if (isIOS && document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                return;
+            }
+
             setTimeout(() => {
-                if (!window.isUploading) triggerWarning("FOKUS HILANG!", "Anda terdeteksi membuka aplikasi melayang atau notifikasi.");
-            }, 500);
+                if (!window.isUploading && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                    triggerWarning("FOKUS HILANG!", "Anda terdeteksi membuka aplikasi melayang atau notifikasi.");
+                }
+            }, isIOS ? 1500 : 500); // Beri toleransi waktu lebih lama untuk Apple
         });
 
         const handleFullscreenChange = () => {
@@ -645,8 +656,10 @@
             const isFull = document.fullscreenElement || document.webkitFullscreenElement;
             
             if (isSupported && !isFull) {
+                // PENJINAK IOS 2: Bebaskan Apple dari hukuman wajib Fullscreen Sejati
+                if (isIOS) return;
+
                 if (window.isUploading) {
-                    // AMAN: Layar penuh batal karena membuka Kamera HP. Minta siswa klik Lanjutkan.
                     const blocker = document.getElementById('fullscreen-blocker');
                     if(blocker) {
                         blocker.querySelector('h2').innerText = "AKSES KAMERA SELESAI";
@@ -661,6 +674,12 @@
 
         window.addEventListener("resize", () => {
             if (window.isUploading || isSubmitting || document.getElementById('screen-exam').classList.contains('hidden')) return;
+            
+            // PENJINAK IOS 3: Abaikan efek dorongan layar akibat Virtual Keyboard Apple
+            if (isIOS && document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                return;
+            }
+
             if (!document.fullscreenElement && !document.webkitFullscreenElement) handleFullscreenChange(); 
         });
 
@@ -1082,17 +1101,54 @@
         };
 
         // TAMBAHAN: FUNGSI UNTUK BENAR-BENAR MEMULAI WAKTU UJIAN
-        window.actuallyStartExam = () => {
+        // Deklarasi Listener Waktu
+        let activeExamListener = null;
+        let lastEkstraWaktu = 0;
+
+        window.actuallyStartExam = async () => {
+            // PENJINAK IOS 4: Jangan paksa perangkat Apple meminta Fullscreen API agar tidak error
+            if (!isIOS) {
+                try { 
+                    if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+                    else if (document.documentElement.webkitRequestFullscreen) await document.documentElement.webkitRequestFullscreen();
+                } catch(e){}
+            }
+
             const code = examData.kodeUjian;
             const timerKey = `end_time_${code}_${studentData.nis}`;
+            lastEkstraWaktu = examData.ekstraWaktu || 0;
             
             let savedTime = localStorage.getItem(timerKey);
             if(!savedTime) {
-                // Waktu baru berjalan saat tombol ini diklik
                 savedTime = Date.now() + (examData.durasiMenit * 60000);
                 localStorage.setItem(timerKey, savedTime);
             }
             examEndTime = parseInt(savedTime);
+
+            // RADAR TAMBAH WAKTU DARI GURU
+            if (activeExamListener) activeExamListener();
+            activeExamListener = onSnapshot(doc(db, 'ujian_terjadwal', code), (docSnap) => {
+                if(docSnap.exists()) {
+                    const data = docSnap.data();
+                    const newEkstra = data.ekstraWaktu || 0;
+                    if (newEkstra > lastEkstraWaktu) {
+                        const diffMenit = newEkstra - lastEkstraWaktu;
+                        examEndTime += (diffMenit * 60000); // Tambah milidetik ke sisa waktu
+                        localStorage.setItem(timerKey, examEndTime);
+                        lastEkstraWaktu = newEkstra;
+                        
+                        // Berikan notifikasi ke siswa
+                        const t = document.getElementById('toast');
+                        if(t) {
+                            document.getElementById('toast-msg').innerText = `Waktu Ujian Ditambah ${diffMenit} Menit oleh Guru!`;
+                            t.classList.remove('translate-y-20');
+                            setTimeout(() => t.classList.add('translate-y-20'), 5000);
+                        } else {
+                            alert(`Waktu Ujian Ditambah ${diffMenit} Menit oleh Guru!`);
+                        }
+                    }
+                }
+            });
 
             document.getElementById('exam-header').classList.remove('hidden');
             document.getElementById('exam-header').classList.add('flex');
@@ -1613,7 +1669,7 @@
             '²','³','ⁿ','⁰','¹','⁴','⁵','⁶','⁷','⁸','⁹',
             '⁻','₀','₁','₂','₃','₄','₅','₆','₇','₈','₉',
             '½','⅓','¼','¾','/','√','∛','∜','±','×','÷',
-            '°','π','θ','α','β','γ','Δ','Σ','Ω','μ'
+            '°','π','θ','α','β','γ','Δ','Σ','Ω','μ',
 			'≠','≈','≤','≥','∞','∠','△','⊥','∥','∴','∵',
             '∈','∉','∪','∩','∅'
         ];
