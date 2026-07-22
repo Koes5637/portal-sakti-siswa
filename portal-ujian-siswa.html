@@ -1468,8 +1468,9 @@
                             max += bobot;
                             
                             let ok = false;
-                            const sAns = (ans || '').toString().trim().toLowerCase();
-                            const sKey = (kd.kunci || '').toString().trim().toLowerCase();
+                            // MESIN ANTI-SPASI: Menyedot seluruh spasi sebelum dikoreksi
+                            const sAns = (ans || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+                            const sKey = (kd.kunci || '').toString().trim().toLowerCase().replace(/\s+/g, '');
 
                             if(kd.tipe === 'pg' && ans == kd.kunci) ok = true;
                             else if(kd.tipe === 'esai-singkat' && sAns === sKey && sKey !== '') ok = true;
@@ -1553,8 +1554,9 @@
                     
                     let statusJawaban = '<span class="text-red-500 font-bold bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded text-xs">SALAH ✕</span>';
                     let ok = false;
-                    const sAns = (ans || '').toString().trim().toLowerCase();
-                    const sKey = (kunciBenar || '').toString().trim().toLowerCase();
+                    // MESIN ANTI-SPASI: Menyedot seluruh spasi untuk tampilan pembahasan
+                    const sAns = (ans || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+                    const sKey = (kunciBenar || '').toString().trim().toLowerCase().replace(/\s+/g, '');
 
                     if(kd.tipe === 'pg' && ans == kunciBenar) ok = true;
                     else if(kd.tipe === 'esai-singkat' && sAns === sKey && sKey !== '') ok = true;
