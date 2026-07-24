@@ -21,6 +21,9 @@
                     colors: {
                         'deep': '#0f172a', 'surface': '#1e293b', 'primary': '#38bdf8',
                         'accent': '#818cf8', 'success': '#34d399', 'warning': '#fbbf24', 'danger': '#f87171',
+                        'void': '#050505',
+                        'cyber-dark': '#0a0f14',
+                        'neon-blue': '#00f3ff',
                     },
                     animation: {
                         'fade-in': 'fadeIn 0.6s ease-out',
@@ -89,7 +92,6 @@
             box-shadow: 0 0 25px rgba(56, 189, 248, 0.15);
         }
 
-        /* App Container for Mobile View on Desktop */
         .app-container {
             max-width: 480px;
             margin: 0 auto;
@@ -108,6 +110,39 @@
         
         .card-press { transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s; }
         .card-press:active { transform: scale(0.96); box-shadow: none; }
+		
+		.cyber-card {
+            background: rgba(10, 15, 20, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+        .cyber-input {
+            background: rgba(5, 5, 5, 0.8);
+            border: 1px solid #334155;
+            color: #00f3ff;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+        }
+        .cyber-input:focus {
+            border-color: #00f3ff;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+            outline: none;
+        }
+        .btn-cyber-primary {
+            background: linear-gradient(45deg, #00f3ff, #0066ff); 
+            border: none; 
+            color: black; 
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif; 
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+        .btn-cyber-primary:hover { 
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.6); 
+            transform: translateY(-2px); 
+        }
+		
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-[#0f172a] dark:text-[#f8fafc] transition-colors duration-500">
@@ -126,30 +161,40 @@
             <p class="text-sm text-primary font-mono font-bold tracking-[0.3em] uppercase animate-pulse">Menyiapkan Sistem...</p>
         </div>
 
-        <!-- VIEW: LOGIN -->
-        <div id="view-login" class="flex flex-col items-center justify-center min-h-screen p-6 hidden">
-            <div class="glass-panel rounded-3xl p-8 w-full text-center relative overflow-hidden animate-fade-in shadow-2xl">
+        <!-- VIEW: LOGIN (CYBER THEME) -->
+        <div id="view-login" class="flex flex-col items-center justify-center min-h-screen p-6 hidden relative z-[150]">
+            <!-- Memaksa latar belakang menjadi gelap khusus di halaman login -->
+            <div class="fixed inset-0 bg-void -z-10"></div>
+            <div class="fixed inset-0 -z-10" style="background-image: radial-gradient(circle at 15% 50%, rgba(0, 243, 255, 0.08) 0%, transparent 25%), radial-gradient(circle at 85% 30%, rgba(0, 255, 157, 0.08) 0%, transparent 25%);"></div>
+
+            <div class="cyber-card w-full max-w-md rounded-2xl p-8 text-center relative overflow-hidden animate-fade-in z-20">
                 <!-- Top Accent Line -->
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary"></div>
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-blue to-transparent"></div>
                 
                 <!-- Logo Sekolah -->
-                <div class="w-24 h-24 bg-primary/10 text-primary rounded-3xl flex items-center justify-center mx-auto mb-6 border border-primary/20 shadow-inner">
-                    <i class="ph ph-graduation-cap text-6xl"></i>
+                <div class="w-20 h-20 bg-cyan-900/20 text-neon-blue border border-cyan-500/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_15px_rgba(0,243,255,0.2)]">
+                    <i class="ph ph-graduation-cap text-5xl"></i>
                 </div>
                 
-                <h1 class="text-3xl font-bold font-cyber tracking-tight text-slate-900 dark:text-white mb-2">PORTAL SISWA</h1>
-                <p class="text-slate-500 dark:text-slate-400 text-xs tracking-widest uppercase mb-8">Sistem Asesmen Terintegrasi</p>
+                <h1 class="text-3xl font-bold font-cyber text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-white mb-2 tracking-wider">PORTAL SISWA</h1>
+                <p class="text-gray-400 text-xs tracking-widest font-mono uppercase mb-8">Sistem Asesmen Terintegrasi</p>
 
-                <form onsubmit="app.login(event)" class="w-full space-y-5">
-                    <input type="text" id="input-kode-sekolah" required
-                        class="glow-input w-full p-5 rounded-2xl text-center text-xl font-bold tracking-[0.2em] uppercase placeholder-slate-400 dark:placeholder-slate-500" 
-                        placeholder="KODE SEKOLAH">
+                <form onsubmit="app.login(event)" class="w-full space-y-5 text-left">
+                    <div>
+                        <label class="block text-neon-blue text-[10px] font-bold mb-2 tracking-wider pl-1">KODE SEKOLAH</label>
+                        <input type="text" id="input-kode-sekolah" required
+                            class="cyber-input w-full p-4 rounded-xl text-center text-lg font-bold tracking-[0.2em] uppercase placeholder-gray-700" 
+                            placeholder="KODE">
+                    </div>
                     
-                    <input type="text" id="input-nis" oninput="app.formatNIS(this)" required
-                        class="glow-input w-full p-5 rounded-2xl text-center text-xl font-bold tracking-[0.2em] placeholder-slate-400 dark:placeholder-slate-500 uppercase" 
-                        placeholder="NIS SISWA">
+                    <div>
+                        <label class="block text-neon-blue text-[10px] font-bold mb-2 tracking-wider pl-1">NOMOR INDUK SISWA</label>
+                        <input type="text" id="input-nis" oninput="app.formatNIS(this)" required
+                            class="cyber-input w-full p-4 rounded-xl text-center text-lg font-bold tracking-[0.2em] placeholder-gray-700 uppercase" 
+                            placeholder="NIS">
+                    </div>
                     
-                    <button type="submit" id="btn-login" class="w-full py-4 rounded-2xl bg-gradient-to-r from-primary to-accent hover:to-indigo-500 text-white font-bold shadow-lg shadow-primary/30 transition-all transform active:scale-95 tracking-wider uppercase text-sm">
+                    <button type="submit" id="btn-login" class="btn-cyber-primary w-full py-4 mt-4 rounded-xl text-sm tracking-wider uppercase">
                         Masuk Sistem
                     </button>
                 </form>
@@ -187,9 +232,7 @@
                         <i class="ph ph-calendar-check text-primary text-lg"></i> Modul Kehadiran
                     </h3>
                     
-                    <!-- Presensi Sejajar (Grid 2 Kolom) -->
                     <div class="grid grid-cols-2 gap-4">
-                        <!-- Card Presensi Piket -->
                         <a href="presensi-global-siswa.html" class="card-press block glass-panel p-5 rounded-3xl border border-white/20 hover:border-primary/50 relative overflow-hidden group">
                             <div class="absolute -right-4 -top-4 w-20 h-20 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-all"></div>
                             <div class="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center text-2xl mb-4 border border-primary/20 shadow-inner">
@@ -199,7 +242,6 @@
                             <p class="text-[10px] text-slate-500 dark:text-slate-400">Gerbang Sekolah</p>
                         </a>
 
-                        <!-- Card Presensi Kelas -->
                         <a href="aplikasi-presensi-siswa.html" class="card-press block glass-panel p-5 rounded-3xl border border-white/20 hover:border-success/50 relative overflow-hidden group">
                             <div class="absolute -right-4 -top-4 w-20 h-20 bg-success/10 rounded-full blur-xl group-hover:bg-success/20 transition-all"></div>
                             <div class="w-12 h-12 bg-success/10 text-success rounded-2xl flex items-center justify-center text-2xl mb-4 border border-success/20 shadow-inner">
@@ -211,15 +253,23 @@
                     </div>
                 </div>
 
+                <!-- SECTION BARU: Papan Tugas Harian -->
+                <div id="section-tugas" class="hidden">
+                    <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                        <i class="ph ph-push-pin text-warning text-lg"></i> Papan Tugas Harian
+                    </h3>
+                    <div id="tugas-container" class="space-y-4">
+                        <!-- Kartu Tugas akan diisi otomatis lewat JS -->
+                    </div>
+                </div>
+
                 <!-- Section: Ujian -->
                 <div>
                     <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                         <i class="ph ph-exam text-accent text-lg"></i> Evaluasi Akademik
                     </h3>
                     
-                    <!-- Portal Ujian (Lebar Penuh) -->
                     <a href="portal-ujian-siswa.html" class="card-press block bg-slate-900 p-6 rounded-3xl shadow-2xl relative overflow-hidden border border-slate-700 group">
-                        <!-- Decorative Elements -->
                         <div class="absolute -right-10 -top-10 w-40 h-40 bg-accent/30 rounded-full blur-3xl group-hover:bg-accent/40 transition-colors duration-500"></div>
                         <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl"></div>
                         
@@ -254,7 +304,6 @@
                 </h3>
 
                 <div class="space-y-4">
-                    <!-- Upload Foto -->
                     <a href="portal-upload-foto.html" class="card-press flex items-center justify-between p-5 glass-panel rounded-3xl hover:border-primary/50 transition-colors">
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 bg-primary/10 border border-primary/20 text-primary rounded-2xl flex items-center justify-center text-2xl shadow-inner">
@@ -268,7 +317,6 @@
                         <i class="ph ph-caret-right text-slate-400"></i>
                     </a>
 
-                    <!-- Data WA Ortu -->
                     <a href="portal-data-wa-ortu.html" class="card-press flex items-center justify-between p-5 glass-panel rounded-3xl hover:border-success/50 transition-colors">
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 bg-success/10 border border-success/20 text-success rounded-2xl flex items-center justify-center text-2xl shadow-inner">
@@ -309,11 +357,27 @@
         </div>
     </div>
 
+    <!-- MODAL PEMBACA TUGAS PDF -->
+    <div id="modal-baca-tugas" class="fixed inset-0 z-[200] hidden bg-slate-900/95 backdrop-blur-xl flex-col">
+        <div class="flex justify-between items-center p-4 border-b border-slate-800 text-white">
+            <div>
+                <h3 id="tugas-title" class="font-bold text-sm text-slate-100">Judul Tugas</h3>
+                <p id="tugas-mapel" class="text-[10px] text-primary uppercase tracking-widest font-bold">Mapel</p>
+            </div>
+            <button onclick="app.tutupTugas()" class="bg-danger/20 text-danger hover:bg-danger hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-danger/30 flex items-center gap-1">
+                <i class="ph ph-x-circle text-lg"></i> Tutup
+            </button>
+        </div>
+        <div class="flex-1 w-full bg-slate-800">
+            <iframe id="tugas-viewer" class="w-full h-full border-none" src=""></iframe>
+        </div>
+    </div>
+
     <!-- FIREBASE & LOGIC -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         // BUKU INDUK SUPER ADMIN PUSAT
         const masterConfig = {
@@ -334,7 +398,6 @@
         let auth = null;
         let db = null;
 
-        // --- THEME TOGGLE LOGIC ---
         window.toggleTheme = () => {
             document.documentElement.classList.toggle('dark');
             localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
@@ -392,7 +455,6 @@
             }
 
             formatNIS(input) {
-                // Membebaskan input angka, huruf, titik, dan strip. Otomatis huruf besar.
                 input.value = input.value.replace(/[^a-zA-Z0-9.\-]/g, '').toUpperCase();
             }
 
@@ -413,7 +475,6 @@
                 document.getElementById('btn-login').disabled = true;
 
                 try {
-                    // 1. Cek Kode Sekolah ke Buku Induk
                     await signInAnonymously(masterAuth);
                     const schoolSnap = await getDoc(doc(masterDb, 'daftar_sekolah', kode));
                     
@@ -421,7 +482,6 @@
                     const schoolData = schoolSnap.data();
                     if (schoolData.status !== "Aktif") throw new Error("Lisensi sekolah ditangguhkan!");
 
-                    // 2. Inisialisasi Firebase Khusus Sekolah Tersebut
                     if (!firebaseApp) {
                         firebaseApp = initializeApp(schoolData.config, "AppSekolah");
                         auth = getAuth(firebaseApp);
@@ -430,12 +490,10 @@
 
                     await signInAnonymously(auth);
 
-                    // 3. Cek NIS Siswa di Database Sekolah
                     const snap = await getDoc(doc(db, 'siswa', nisInput));
                     if (snap.exists()) {
                         const logoUrl = schoolData.logo_url || "Logo.png";
                         
-                        // SIMPAN KE SAKU MEMORI (Sangat Penting untuk 5 Aplikasi Lainnya)
                         localStorage.setItem('sakti_school_config', JSON.stringify(schoolData.config));
                         localStorage.setItem('sakti_school_logo', logoUrl);
                         localStorage.setItem('student_nis', nisInput);
@@ -468,6 +526,9 @@
                         document.getElementById('view-login').classList.add('hidden');
                         document.getElementById('view-login').classList.remove('flex');
                         document.getElementById('view-main').classList.remove('hidden');
+
+                        // Panggil pencari Tugas setelah data siswa terisi
+                        this.loadTugas();
                     } else {
                         this.logout(); 
                     }
@@ -476,6 +537,105 @@
                 } finally {
                     this.showLoading(false);
                 }
+            }
+
+            // --- FITUR BARU: MUAT TUGAS HARIAN ---
+            async loadTugas() {
+                if(!this.studentData || !this.studentData.kelas) return;
+                const container = document.getElementById('tugas-container');
+                const section = document.getElementById('section-tugas');
+                
+                try {
+                    // Cari tugas yang aktif dan ditujukan untuk kelas siswa ini
+                    const q = query(
+                        collection(db, 'modul_sakti'), 
+                        where('tugasAktif', '==', true),
+                        where('targetKelas', 'array-contains', this.studentData.kelas)
+                    );
+                    const snap = await getDocs(q);
+                    let tugasList = [];
+                    const now = new Date(); // Waktu saat ini
+
+                    snap.forEach(d => {
+                        const data = d.data();
+                        const deadline = new Date(data.batasWaktu);
+                        // Filter sakti: JIKA DEADLINE LEWAT, JANGAN MASUKKAN KE DAFTAR!
+                        if(deadline > now) {
+                            tugasList.push({ id: d.id, ...data, deadlineObj: deadline });
+                        }
+                    });
+
+                    // Jika tidak ada tugas aktif, sembunyikan Papannya
+                    if(tugasList.length === 0) {
+                        section.classList.add('hidden');
+                        return;
+                    }
+
+                    // Tampilkan Papannya jika ada tugas
+                    section.classList.remove('hidden');
+                    
+                    // Urutkan dari deadline yang paling mendesak
+                    tugasList.sort((a,b) => a.deadlineObj - b.deadlineObj);
+
+                    container.innerHTML = tugasList.map(t => {
+                        const dlStr = t.deadlineObj.toLocaleString('id-ID', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
+                        // Cek apakah nama siswa ini sudah ada di dalam array dibacaOleh
+                        const isRead = t.dibacaOleh && t.dibacaOleh.includes(this.studentData.nama);
+                        
+                        return `
+                        <div class="glass-panel p-5 rounded-3xl border ${isRead ? 'border-success/30' : 'border-warning/50 shadow-[0_0_15px_rgba(251,191,36,0.15)]'} relative overflow-hidden flex flex-col gap-4">
+                            <div class="flex justify-between items-start">
+                                <div class="pr-3">
+                                    <span class="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold rounded-lg uppercase tracking-wider mb-2 inline-block">${t.mapel}</span>
+                                    <h4 class="font-bold text-base text-slate-800 dark:text-white leading-tight">${t.judul}</h4>
+                                </div>
+                                <div class="shrink-0 text-right flex flex-col items-end">
+                                    <span class="text-[10px] font-bold ${isRead ? 'text-success' : 'text-warning'} mb-1.5 flex items-center gap-1">
+                                        <i class="ph ph-clock"></i> ${dlStr}
+                                    </span>
+                                    ${isRead ? '<span class="text-[9px] bg-success/10 border border-success/30 text-success px-2 py-0.5 rounded-full font-bold">Terbaca</span>' : '<span class="text-[9px] bg-warning/10 border border-warning/30 text-warning px-2 py-0.5 rounded-full font-bold animate-pulse">Tugas Baru</span>'}
+                                </div>
+                            </div>
+                            <button onclick="app.bukaTugas('${t.id}', '${t.fileUrl}', '${t.judul}', '${t.mapel}')" class="w-full py-3 bg-slate-900 dark:bg-slate-800 hover:bg-primary dark:hover:bg-primary text-white border border-slate-700 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 group">
+                                <i class="ph ph-book-open-text text-lg group-hover:scale-110 transition-transform"></i> Buka PDF Tugas
+                            </button>
+                        </div>
+                        `;
+                    }).join('');
+
+                } catch (e) {
+                    console.error("Gagal memuat tugas", e);
+                }
+            }
+
+            // FUNGSI BARU: Buka Tugas & Kirim Sinyal "Baca" ke Guru
+            async bukaTugas(docId, url, judul, mapel) {
+                document.getElementById('tugas-title').textContent = judul;
+                document.getElementById('tugas-mapel').textContent = mapel;
+                document.getElementById('tugas-viewer').src = url + '#toolbar=0&view=fitH';
+                
+                const modal = document.getElementById('modal-baca-tugas');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                try {
+                    // Diam-diam update database, tambahkan nama siswa ke array dibacaOleh
+                    const docRef = doc(db, 'modul_sakti', docId);
+                    await updateDoc(docRef, {
+                        dibacaOleh: arrayUnion(this.studentData.nama)
+                    });
+                    // Refresh Papan Tugas di balik layar agar tombol berubah jadi "Terbaca"
+                    this.loadTugas(); 
+                } catch(e) {
+                    console.error("Gagal mencatat log baca", e);
+                }
+            }
+
+            tutupTugas() {
+                const modal = document.getElementById('modal-baca-tugas');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.getElementById('tugas-viewer').src = '';
             }
 
             switchTab(tabId) {
@@ -489,7 +649,6 @@
 
             logout() {
                 if(confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
-                    // Bersihkan semua identitas dari HP siswa
                     localStorage.removeItem('student_nis');
                     localStorage.removeItem('sakti_school_config');
                     localStorage.removeItem('sakti_school_logo');
