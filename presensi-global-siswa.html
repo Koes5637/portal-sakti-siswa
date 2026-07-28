@@ -586,8 +586,9 @@
                 const shortReason = document.getElementById('permit-short-reason').value.trim();
                 const btn = document.getElementById('btn-submit-permit');
 
-                if (!this.user || !reason || !shortReason || !this.permitImageBase64) { 
-                    alert("Lengkapi Keterangan Singkat, Alasan Detail, dan Foto Bukti!"); return; 
+                // PERBAIKAN 1: Hapus syarat wajib foto (!this.permitImageBase64) dan sesuaikan teks peringatan
+                if (!this.user || !reason || !shortReason) { 
+                    alert("Mohon lengkapi Keterangan Singkat dan Alasan Detail!"); return; 
                 }
 
                 btn.disabled = true;
@@ -604,7 +605,8 @@
                         tipe: this.permitType,
                         keterangan_singkat: shortReason,
                         alasan: reason,
-                        foto: this.permitImageBase64,
+                        // PERBAIKAN 2: Tambahkan '|| null' agar database tetap aman menerima data kosong
+                        foto: this.permitImageBase64 || null, 
                         timestamp: serverTimestamp()
                     });
 
