@@ -125,7 +125,7 @@
 
     <div class="cyber-card w-full max-w-md rounded-2xl p-8 relative overflow-hidden">
         <!-- Tombol Kembali Pojok Kiri Atas -->
-        <button onclick="window.location.href='index.html'" class="absolute top-5 left-5 text-gray-400 hover:text-neon-blue transition-colors z-20" title="Kembali ke Dashboard">
+        <button onclick="window.location.href='Dashboard Siswa.html'" class="absolute top-5 left-5 text-gray-400 hover:text-neon-blue transition-colors z-20" title="Kembali ke Dashboard">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
         </button>
         
@@ -164,15 +164,14 @@
             <div>
                 <label class="block text-neon-blue text-xs font-bold mb-2 tracking-wider">NOMOR WHATSAPP WALI MURID</label>
                 <div class="relative">
-                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-lg">+62</span>
-                    <input type="tel" id="parent-wa" placeholder="81234567890" 
-                        class="cyber-input w-full p-4 pl-14 rounded-xl text-lg tracking-wide placeholder-gray-700">
+                    <input type="tel" id="parent-wa" placeholder="Contoh: 081234567890" 
+                        class="cyber-input w-full p-4 rounded-xl text-lg tracking-wide placeholder-gray-700 text-center">
                 </div>
-                <p class="text-[10px] text-gray-500 mt-2 text-center">*Pastikan nomor aktif dan terhubung ke WhatsApp.</p>
+                <p class="text-[10px] text-gray-500 mt-2 text-center">*Bisa diawali dengan angka 0 atau 62.</p>
             </div>
 
             <div class="flex gap-3">
-                <button onclick="window.location.href='index.html'" class="flex-1 py-3 rounded-xl border border-gray-600 text-gray-400 hover:bg-gray-800 transition text-xs font-bold">BATAL</button>
+                <button onclick="window.location.href='Dashboard Siswa.html'" class="flex-1 py-3 rounded-xl border border-gray-600 text-gray-400 hover:bg-gray-800 transition text-xs font-bold">BATAL</button>
                 <button onclick="saveData()" class="flex-[2] cyber-btn py-3 rounded-xl shadow-neon-blue">SIMPAN DATA</button>
             </div>
         </div>
@@ -184,7 +183,7 @@
             </div>
             <h3 class="text-2xl font-bold text-white mb-2 font-cyber">BERHASIL!</h3>
             <p class="text-gray-400 text-sm mb-8">Data kontak telah diperbarui di server pusat.</p>
-            <button onclick="window.location.href='index.html'" class="text-neon-blue text-xs font-bold hover:underline">KEMBALI KE DASHBOARD</button>
+            <button onclick="window.location.href='Dashboard Siswa.html'" class="text-neon-blue text-xs font-bold hover:underline">KEMBALI KE DASHBOARD</button>
         </div>
 
     </div>
@@ -198,7 +197,7 @@
             const savedConfigStr = localStorage.getItem('sakti_school_config');
             if (!savedConfigStr) {
                 alert("Sesi tidak valid! Kembali ke Dashboard.");
-                window.location.href = 'index.html';
+                window.location.href = 'Dashboard Siswa.html';
                 throw new Error("Berhenti: Sesi tidak valid"); 
             }
             
@@ -304,14 +303,21 @@
             const waRaw = document.getElementById('parent-wa').value.trim();
             
             if (waRaw.length < 8) {
-                alert("Nomor WhatsApp tidak valid.");
+                alert("Nomor WhatsApp tidak valid. Terlalu pendek.");
                 return;
             }
 
-            // Normalisasi (opsional, tapi bagus untuk konsistensi)
-            // Jika user mengetik 628..., biarkan. Jika 08..., biarkan.
-            // Aplikasi guru nanti yang akan handle formatnya.
-            const wa = waRaw.replace(/\D/g, ''); // Hanya angka
+            // MURNIKAN & FORMAT NOMOR KE STANDAR WHATSAPP (62...)
+            let wa = waRaw.replace(/\D/g, ''); // Buang spasi, strip, atau plus
+            
+            // Jika siswa mengetik angka 0 di depan, ubah jadi 62
+            if (wa.startsWith('0')) {
+                wa = '62' + wa.substring(1);
+            } 
+            // Jika siswa mengetik tanpa 0 dan tanpa 62 (misal langsung 812...), tambahkan 62
+            else if (wa.startsWith('8')) {
+                wa = '62' + wa;
+            }
 
             showLoading(true, "MENYIMPAN DATA...");
 
