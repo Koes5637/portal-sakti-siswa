@@ -170,7 +170,7 @@
     <div id="pesan-guru-modal" class="fixed inset-0 z-[10005] bg-black/90 hidden flex-col items-center justify-center backdrop-blur-md p-6 text-center animate-fade-in">
         <div class="glass-panel border-4 border-red-600 rounded-3xl p-10 max-w-2xl w-full shadow-[0_0_80px_rgba(239,68,68,0.6)]">
             <div class="text-7xl mb-4 animate-bounce">📩</div>
-            <h2 class="text-2xl font-bold text-white mb-6 tracking-widest uppercase">Pesan Langsung Dari Pengawas</h2>
+            <h2 class="text-2xl font-bold text-white mb-6 tracking-widest uppercase">Pesan Langsung Dari Guru/Pengawas</h2>
             
             <div class="bg-red-500/10 p-8 rounded-2xl border border-red-500/30 mb-10">
                 <!-- Teks ini disetel besar (text-3xl / 4xl) dan tebal berwarna merah -->
@@ -391,6 +391,13 @@
                         <span id="q-number">1</span>
                     </div>
                     <span id="q-type-badge" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-white/5 uppercase tracking-wide">PG</span>
+                    
+                    <!-- TOMBOL SINKRONISASI SOAL (BARU) -->
+                    <button id="btn-refresh-soal" onclick="window.refreshSoalSekarang()" class="px-3 py-1.5 ml-2 bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800 rounded-lg text-xs font-bold flex items-center gap-2 border border-sky-200 dark:border-sky-800 transition-all shadow-sm" title="Tarik ulang data soal ini dari server">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Sinkron Soal
+                    </button>
+
                 </div>
                 <label class="flex items-center gap-3 cursor-pointer group select-none bg-amber-50 dark:bg-slate-800/30 px-4 py-2 rounded-xl border border-amber-200 dark:border-white/5 hover:bg-amber-100 dark:hover:bg-amber-500/10 hover:border-amber-300 dark:hover:border-amber-500/30 transition-all">
                     <span class="text-xs font-bold text-amber-600 dark:text-slate-400 group-hover:text-amber-500 uppercase tracking-wider">Ragu-ragu</span>
@@ -1384,6 +1391,65 @@
             updateNavStyle();
         };
 
+		// --- FITUR SINKRONISASI SOAL MANUAL ---
+        window.refreshSoalSekarang = async () => {
+            const btn = document.getElementById('btn-refresh-soal');
+            const iconAsli = btn.innerHTML;
+            
+            // Ubah tampilan tombol jadi loading
+            btn.innerHTML = '⏳ Menarik data...';
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-wait');
+
+            try {
+                // Ambil ID soal yang sedang dibuka saat ini
+                const qId = questions[currentIndex].id;
+                
+                // Tarik ulang data ke Firebase HANYA untuk 1 soal ini
+                const snap = await getDoc(doc(db, 'bank_soal', qId));
+                
+                if(snap.exists()) {
+                    const d = snap.data();
+                    const ops = d.opsi ? d.opsi.map((o, i) => ({ ...o, originalIndex: i })) : [];
+                    
+                    // Timpa data soal lama di memori dengan data baru yang sudah bebas Typo
+                    questions[currentIndex] = { id: snap.id, ...d, opsi: ops };
+                    
+                    // Acak ulang opsi JIKA di awal ujian pengaturannya memang diacak
+                    if(examData.settingAcakOpsi) {
+                        if(d.type === 'pg' || d.type === 'pgk' || d.tipe === 'pg' || d.tipe === 'pgk') {
+                            shuffleArray(questions[currentIndex].opsi);
+                        }
+                    }
+                    
+                    // Render ulang tampilan soal di layar (jawaban siswa sebelumnya otomatis aman karena terikat index)
+                    loadQuestion(currentIndex);
+                    
+                    // Beri efek visual hijau sejenak sebagai tanda sukses
+                    btn.innerHTML = '✅ Sukses!';
+                    btn.classList.replace('text-sky-600', 'text-emerald-600');
+                    btn.classList.replace('bg-sky-100', 'bg-emerald-100');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = iconAsli;
+                        btn.classList.replace('text-emerald-600', 'text-sky-600');
+                        btn.classList.replace('bg-emerald-100', 'bg-sky-100');
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-50', 'cursor-wait');
+                    }, 2000);
+                } else {
+                    alert("Gagal: Soal ini mungkin sudah dihapus dari server.");
+                    btn.innerHTML = iconAsli;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-wait');
+                }
+            } catch(e) {
+                alert("Gagal menyinkronkan soal. Pastikan internet stabil.");
+                btn.innerHTML = iconAsli;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-wait');
+            }
+        };
         window.saveAns = (v) => { 
             answers[currentIndex].val = v; persist(); updateNavStyle();
             if(questions[currentIndex].type !== 'esai-singkat' && questions[currentIndex].type !== 'esai-kompleks') loadQuestion(currentIndex);
