@@ -54,7 +54,6 @@
                 radial-gradient(at 100% 100%, rgba(129, 140, 248, 0.1) 0px, transparent 50%);
         }
 
-        /* PREMIUM GLASS STYLE (DUAL MODE) */
         .glass-panel {
             background: rgba(255, 255, 255, 0.75);
             backdrop-filter: blur(20px);
@@ -142,7 +141,6 @@
             box-shadow: 0 0 25px rgba(0, 243, 255, 0.6); 
             transform: translateY(-2px); 
         }
-		
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-[#0f172a] dark:text-[#f8fafc] transition-colors duration-500">
@@ -163,15 +161,12 @@
 
         <!-- VIEW: LOGIN (CYBER THEME) -->
         <div id="view-login" class="flex flex-col items-center justify-center min-h-screen p-6 hidden relative z-[150]">
-            <!-- Memaksa latar belakang menjadi gelap khusus di halaman login -->
             <div class="fixed inset-0 bg-void -z-10"></div>
             <div class="fixed inset-0 -z-10" style="background-image: radial-gradient(circle at 15% 50%, rgba(0, 243, 255, 0.08) 0%, transparent 25%), radial-gradient(circle at 85% 30%, rgba(0, 255, 157, 0.08) 0%, transparent 25%);"></div>
 
             <div class="cyber-card w-full max-w-md rounded-2xl p-8 text-center relative overflow-hidden animate-fade-in z-20">
-                <!-- Top Accent Line -->
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neon-blue to-transparent"></div>
                 
-                <!-- Logo Sekolah -->
                 <div class="w-20 h-20 bg-cyan-900/20 text-neon-blue border border-cyan-500/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_15px_rgba(0,243,255,0.2)]">
                     <i class="ph ph-graduation-cap text-5xl"></i>
                 </div>
@@ -204,10 +199,8 @@
         <!-- VIEW: MAIN DASHBOARD -->
         <div id="view-main" class="hidden">
             
-            <!-- Global Header with Logo -->
             <header class="pt-10 pb-6 px-6 glass-panel sticky top-0 z-40 rounded-b-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
                 
-                <!-- Theme Toggle (Top Right) -->
                 <button onclick="window.toggleTheme()" class="absolute top-6 right-6 p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary transition-all border border-white/20">
                     <i class="ph ph-moon dark:hidden text-lg"></i>
                     <i class="ph ph-sun hidden dark:block text-lg"></i>
@@ -253,17 +246,37 @@
                     </div>
                 </div>
 
-                <!-- SECTION BARU: Papan Tugas Harian -->
-                <div id="section-tugas" class="hidden">
+                <!-- SECTION BARU: RUANG BELAJAR (MODUL & TUGAS) -->
+                <div>
                     <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                        <i class="ph ph-push-pin text-warning text-lg"></i> Papan Tugas Harian
+                        <i class="ph ph-books text-indigo-500 text-lg"></i> Pustaka & Latihan
                     </h3>
-                    <div id="tugas-container" class="space-y-4">
-                        <!-- Kartu Tugas akan diisi otomatis lewat JS -->
-                    </div>
+                    
+                    <a href="ruang-belajar.html" class="card-press block bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl relative overflow-hidden border border-slate-200 dark:border-slate-700 group">
+                        <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl group-hover:bg-indigo-500/30 transition-colors duration-500"></div>
+                        
+                        <div class="flex items-center gap-5 relative z-10">
+                            <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg border border-white/20">
+                                <i class="ph ph-student"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xl text-slate-800 dark:text-white mb-1 tracking-wide font-cyber">RUANG BELAJAR</h4>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Materi Pelajaran, KBM Harian, Latihan TKA & UTBK.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-700/50 flex justify-between items-center relative z-10">
+                            <span id="badge-tugas-aktif" class="flex items-center gap-2 text-[10px] text-indigo-500 dark:text-indigo-400 font-mono uppercase tracking-widest px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 rounded-lg font-bold transition-colors">
+                                Cek Etalase Modul
+                            </span>
+                            <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                <i class="ph ph-arrow-right"></i>
+                            </div>
+                        </div>
+                    </a>
                 </div>
 
-                <!-- Section: Ujian -->
+                <!-- Section: Ujian Utama -->
                 <div>
                     <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                         <i class="ph ph-exam text-accent text-lg"></i> Evaluasi Akademik
@@ -279,7 +292,7 @@
                             </div>
                             <div>
                                 <h4 class="font-bold text-xl text-white mb-1 tracking-wide font-cyber">PORTAL UJIAN</h4>
-                                <p class="text-xs text-slate-400">Akses Ulangan & PSAS/PSAT/PSAJ</p>
+                                <p class="text-xs text-slate-400">Akses Ujian Semester (PAS/PAT/PSAJ)</p>
                             </div>
                         </div>
                         
@@ -298,7 +311,6 @@
 
             <!-- TAB 2: PROFIL & PENGATURAN (BACK PAGE) -->
             <div id="page-profile" class="page p-6 space-y-6">
-                
                 <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                     <i class="ph ph-gear text-slate-400 text-lg"></i> Pengaturan Data
                 </h3>
@@ -357,29 +369,12 @@
         </div>
     </div>
 
-    <!-- MODAL PEMBACA TUGAS PDF -->
-    <div id="modal-baca-tugas" class="fixed inset-0 z-[200] hidden bg-slate-900/95 backdrop-blur-xl flex-col">
-        <div class="flex justify-between items-center p-4 border-b border-slate-800 text-white">
-            <div>
-                <h3 id="tugas-title" class="font-bold text-sm text-slate-100">Judul Tugas</h3>
-                <p id="tugas-mapel" class="text-[10px] text-primary uppercase tracking-widest font-bold">Mapel</p>
-            </div>
-            <button onclick="app.tutupTugas()" class="bg-danger/20 text-danger hover:bg-danger hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-danger/30 flex items-center gap-1">
-                <i class="ph ph-x-circle text-lg"></i> Tutup
-            </button>
-        </div>
-        <div class="flex-1 w-full bg-slate-800">
-            <iframe id="tugas-viewer" class="w-full h-full border-none" src=""></iframe>
-        </div>
-    </div>
-
     <!-- FIREBASE & LOGIC -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        // BUKU INDUK SUPER ADMIN PUSAT
         const masterConfig = {
             apiKey: "AIzaSyAwIwimlyrE4qQqYa2gA8Pfygd59USsveQ",
             authDomain: "aplikasi-ulangan-01.firebaseapp.com",
@@ -393,7 +388,6 @@
         const masterAuth = getAuth(masterApp);
         const masterDb = getFirestore(masterApp);
 
-        // POINTER DINAMIS DATABASE SEKOLAH
         let firebaseApp = null;
         let auth = null;
         let db = null;
@@ -527,8 +521,8 @@
                         document.getElementById('view-login').classList.remove('flex');
                         document.getElementById('view-main').classList.remove('hidden');
 
-                        // Panggil pencari Tugas setelah data siswa terisi
-                        this.loadTugas();
+                        // Hitung jumlah tugas/modul yang tersedia untuk notifikasi
+                        this.cekKetersediaanModul();
                     } else {
                         this.logout(); 
                     }
@@ -539,103 +533,41 @@
                 }
             }
 
-            // --- FITUR BARU: MUAT TUGAS HARIAN ---
-            async loadTugas() {
+            // Fungsi Pintar: Menghitung Modul Aktif di Ruang Belajar
+            async cekKetersediaanModul() {
                 if(!this.studentData || !this.studentData.kelas) return;
-                const container = document.getElementById('tugas-container');
-                const section = document.getElementById('section-tugas');
                 
                 try {
-                    // Cari tugas yang aktif dan ditujukan untuk kelas siswa ini
-                    const q = query(
-                        collection(db, 'modul_sakti'), 
-                        where('tugasAktif', '==', true),
-                        where('targetKelas', 'array-contains', this.studentData.kelas)
-                    );
+                    const q = query(collection(db, 'modul_sakti'), where('tugasAktif', '==', true));
                     const snap = await getDocs(q);
-                    let tugasList = [];
-                    const now = new Date(); // Waktu saat ini
+                    let hitungModul = 0;
+                    const now = new Date();
 
                     snap.forEach(d => {
                         const data = d.data();
-                        const deadline = new Date(data.batasWaktu);
-                        // Filter sakti: JIKA DEADLINE LEWAT, JANGAN MASUKKAN KE DAFTAR!
-                        if(deadline > now) {
-                            tugasList.push({ id: d.id, ...data, deadlineObj: deadline });
+                        const isTarget = data.is_publik || (data.target_kelas && data.target_kelas.includes(this.studentData.kelas));
+                        if (isTarget) {
+                            if(data.batas_waktu) {
+                                const deadline = new Date(data.batas_waktu);
+                                if(deadline > now) hitungModul++;
+                            } else {
+                                hitungModul++; 
+                            }
                         }
                     });
 
-                    // Jika tidak ada tugas aktif, sembunyikan Papannya
-                    if(tugasList.length === 0) {
-                        section.classList.add('hidden');
-                        return;
+                    const badge = document.getElementById('badge-tugas-aktif');
+                    if(hitungModul > 0) {
+                        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Tersedia ${hitungModul} Modul Baru!`;
+                        badge.classList.remove('text-indigo-500', 'dark:text-indigo-400', 'bg-indigo-50', 'dark:bg-indigo-900/30', 'border-indigo-100', 'dark:border-indigo-800/50');
+                        badge.classList.add('text-amber-700', 'dark:text-amber-300', 'bg-amber-100', 'dark:bg-amber-900/40', 'border-amber-200', 'dark:border-amber-800');
+                    } else {
+                        badge.innerHTML = `Pustaka Modul SAKTI`;
                     }
 
-                    // Tampilkan Papannya jika ada tugas
-                    section.classList.remove('hidden');
-                    
-                    // Urutkan dari deadline yang paling mendesak
-                    tugasList.sort((a,b) => a.deadlineObj - b.deadlineObj);
-
-                    container.innerHTML = tugasList.map(t => {
-                        const dlStr = t.deadlineObj.toLocaleString('id-ID', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'});
-                        // Cek apakah nama siswa ini sudah ada di dalam array dibacaOleh
-                        const isRead = t.dibacaOleh && t.dibacaOleh.includes(this.studentData.nama);
-                        
-                        return `
-                        <div class="glass-panel p-5 rounded-3xl border ${isRead ? 'border-success/30' : 'border-warning/50 shadow-[0_0_15px_rgba(251,191,36,0.15)]'} relative overflow-hidden flex flex-col gap-4">
-                            <div class="flex justify-between items-start">
-                                <div class="pr-3">
-                                    <span class="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold rounded-lg uppercase tracking-wider mb-2 inline-block">${t.mapel}</span>
-                                    <h4 class="font-bold text-base text-slate-800 dark:text-white leading-tight">${t.judul}</h4>
-                                </div>
-                                <div class="shrink-0 text-right flex flex-col items-end">
-                                    <span class="text-[10px] font-bold ${isRead ? 'text-success' : 'text-warning'} mb-1.5 flex items-center gap-1">
-                                        <i class="ph ph-clock"></i> ${dlStr}
-                                    </span>
-                                    ${isRead ? '<span class="text-[9px] bg-success/10 border border-success/30 text-success px-2 py-0.5 rounded-full font-bold">Terbaca</span>' : '<span class="text-[9px] bg-warning/10 border border-warning/30 text-warning px-2 py-0.5 rounded-full font-bold animate-pulse">Tugas Baru</span>'}
-                                </div>
-                            </div>
-                            <button onclick="app.bukaTugas('${t.id}', '${t.fileUrl}', '${t.judul}', '${t.mapel}')" class="w-full py-3 bg-slate-900 dark:bg-slate-800 hover:bg-primary dark:hover:bg-primary text-white border border-slate-700 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 group">
-                                <i class="ph ph-book-open-text text-lg group-hover:scale-110 transition-transform"></i> Buka PDF Tugas
-                            </button>
-                        </div>
-                        `;
-                    }).join('');
-
                 } catch (e) {
-                    console.error("Gagal memuat tugas", e);
+                    console.error("Gagal memeriksa ketersediaan modul", e);
                 }
-            }
-
-            // FUNGSI BARU: Buka Tugas & Kirim Sinyal "Baca" ke Guru
-            async bukaTugas(docId, url, judul, mapel) {
-                document.getElementById('tugas-title').textContent = judul;
-                document.getElementById('tugas-mapel').textContent = mapel;
-                document.getElementById('tugas-viewer').src = url + '#toolbar=0&view=fitH';
-                
-                const modal = document.getElementById('modal-baca-tugas');
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-
-                try {
-                    // Diam-diam update database, tambahkan nama siswa ke array dibacaOleh
-                    const docRef = doc(db, 'modul_sakti', docId);
-                    await updateDoc(docRef, {
-                        dibacaOleh: arrayUnion(this.studentData.nama)
-                    });
-                    // Refresh Papan Tugas di balik layar agar tombol berubah jadi "Terbaca"
-                    this.loadTugas(); 
-                } catch(e) {
-                    console.error("Gagal mencatat log baca", e);
-                }
-            }
-
-            tutupTugas() {
-                const modal = document.getElementById('modal-baca-tugas');
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                document.getElementById('tugas-viewer').src = '';
             }
 
             switchTab(tabId) {
