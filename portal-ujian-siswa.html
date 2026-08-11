@@ -1428,18 +1428,42 @@
         };
 
         window.saveAns = (idx, v, isPgk, type) => {
+            // Konversi teks menjadi angka agar kotak centang PGK bisa mendeteksinya dengan benar
+            let valNum = isNaN(v) ? v : Number(v);
+            
             if (isPgk) {
                 let sel = answers[idx].val;
                 if (!Array.isArray(sel)) sel = [];
                 let n = [...sel]; 
-                if(n.includes(v)) n = n.filter(x=>x!==v); else n.push(v); 
+                if(n.includes(valNum)) n = n.filter(x=>x!==valNum); else n.push(valNum); 
                 answers[idx].val = n;
             } else {
-                answers[idx].val = v;
+                answers[idx].val = valNum;
             }
             persist(); 
             updateNavStyle();
-            if(type === 'pg' || type === 'pgk') loadQuestion(currentIndex); 
+            
+            // Ubah warna kotak secara langsung TANPA me-reload layar agar tidak loncat ke atas
+            if (type === 'pg' || type === 'pgk') {
+                const qId = questions[idx].id;
+                const inputs = document.querySelectorAll(`input[name="opsi_${qId}"]`);
+                
+                inputs.forEach(input => {
+                    const label = input.closest('label');
+                    const letterBox = input.nextElementSibling;
+                    const isChecked = input.checked;
+                    
+                    if (isChecked) {
+                        label.className = `flex items-start gap-4 p-4 border rounded-2xl cursor-pointer transition-all duration-200 border-primary bg-primary/10 shadow-[0_0_15px_rgba(56,189,248,0.2)]`;
+                        letterBox.className = `w-8 h-8 ${isPgk ? 'rounded-md' : 'rounded-full'} border flex items-center justify-center font-black text-sm transition-colors bg-primary text-white border-primary`;
+                        if (isPgk) letterBox.innerHTML = '<svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+                    } else {
+                        label.className = `flex items-start gap-4 p-4 border rounded-2xl cursor-pointer transition-all duration-200 bg-white dark:bg-slate-800/30 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-500`;
+                        letterBox.className = `w-8 h-8 ${isPgk ? 'rounded-md' : 'rounded-full'} border flex items-center justify-center font-black text-sm transition-colors bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400`;
+                        if (isPgk) letterBox.innerHTML = '';
+                    }
+                });
+            }
         };
 
         window.saveBsAns = (idx, r, v) => { 
