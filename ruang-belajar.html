@@ -312,15 +312,24 @@
             }
         };
 
-        window.toggleFullscreen = function(containerId) {
-            const elem = document.getElementById(containerId);
-            if (!elem) return;
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                if (elem.requestFullscreen) elem.requestFullscreen();
-                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        // --- MESIN LAYAR PENUH ANTI-KUNCI CUBITAN ANDROID ---
+        window.toggleFullscreen = function(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            
+            // Cek apakah elemen sedang dalam mode Layar Penuh Buatan (CSS)
+            const isLayarPenuh = el.classList.contains('fixed');
+            
+            if (isLayarPenuh) {
+                // KELUAR DARI LAYAR PENUH
+                el.classList.remove('fixed', 'inset-0', 'z-[200]', 'rounded-none');
+                el.classList.add('relative', 'rounded-xl', 'mt-2');
+                el.style.height = '85vh';
             } else {
-                if (document.exitFullscreen) document.exitFullscreen();
-                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                // MASUK KE LAYAR PENUH (Menggunakan CSS agar Android tidak mengunci cubitan jari)
+                el.classList.remove('relative', 'rounded-xl', 'mt-2');
+                el.classList.add('fixed', 'inset-0', 'z-[200]', 'rounded-none');
+                el.style.height = '100vh';
             }
         };
 
