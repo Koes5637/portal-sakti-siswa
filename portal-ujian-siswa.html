@@ -578,10 +578,10 @@
             currentFontSize += delta;
             if(currentFontSize < 80) currentFontSize = 80;
             if(currentFontSize > 160) currentFontSize = 160;
-            const qContent = document.getElementById('q-content');
-            const qOptions = document.getElementById('q-options');
-            if(qContent) qContent.style.fontSize = `${currentFontSize}%`;
-            if(qOptions) qOptions.style.fontSize = `${currentFontSize}%`;
+            // Sapu rata semua teks soal di layar
+            document.querySelectorAll('.soal-text').forEach(el => {
+                el.style.fontSize = `${currentFontSize}%`;
+            });
         };
         
         // --- SUPER SECURITY SYSTEM (ANTI-CHEAT) FIXED ---
@@ -1250,145 +1250,255 @@
             });
         };
 
-        window.loadQuestion = (idx) => {
-            currentIndex = idx;
-            const q = questions[idx];
-            document.getElementById('q-number').textContent = idx + 1;
-            document.getElementById('q-type-badge').textContent = q.type.toUpperCase();
-            
-            const containerQ = document.getElementById('q-content');
-            const containerO = document.getElementById('q-options');
-            containerQ.style.fontSize = `${currentFontSize}%`;
-            containerO.style.fontSize = `${currentFontSize}%`;
+        // --- AMAN TEKS LATEX ---
+        window.formatTextAman = function(text) {
+            if (!text) return '';
+            let str = (typeof text === 'object') ? (text.text || JSON.stringify(text)) : String(text);
+            const parts = str.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g);
+            return parts.map(part => {
+                if (part.startsWith('$')) return part;
+                return part.replace(/\n/g, '<br>');
+            }).join('');
+        };
 
-            let html = '';
-            if(q.audio) html += `<audio controls src="${q.audio}" class="w-full mb-4"></audio>`;
-            html += `<div class="soal-text" style="font-size: 100%">${q.naskah}</div>`;
-            if(q.naskahImage) html += `<img src="${q.naskahImage}" class="mt-2 rounded border">`;
-            if(q.naskahBawah) html += `<div class="soal-text mt-2" style="font-size: 100%">${q.naskahBawah}</div>`;
+        // --- MESIN PERENDER SOAL BERKELOMPOK (CONTINUOUS SCROLL) ---
+        window.loadQuestion = (reqIdx) => {
+            let startIdx = reqIdx;
+            let endIdx = reqIdx;
+            const reqQ = questions[reqIdx];
+            const gid = reqQ.metadata?.groupId || reqQ.group_id;
 
-            containerQ.innerHTML = html;
-            containerO.innerHTML = '';
-            
-            const ans = answers[idx];
-            const savedVal = ans.val;
-
-            if(q.type === 'pg') {
-                q.opsi.forEach((o, i) => {
-                    const isSel = savedVal == o.originalIndex;
-                    const div = document.createElement('div');
-                    div.className = `flex items-center gap-4 p-4 border rounded-2xl cursor-pointer transition-all duration-200 group ${isSel ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(56,189,248,0.2)]' : 'bg-white dark:bg-slate-800/30 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-500'}`;
-                    div.onclick = () => saveAns(o.originalIndex);
-                    div.innerHTML = `<div class="w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-sm transition-colors ${isSel ? 'bg-primary text-white border-primary' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-white'}">${String.fromCharCode(65+i)}</div><div class="flex-1 text-slate-700 dark:text-slate-300 font-medium leading-relaxed group-hover:text-slate-900 dark:group-hover:text-white transition-colors">${o.text}${o.imageBase64 ? `<br><img src="${o.imageBase64}" class="mt-2 h-24 rounded-lg border border-slate-300 dark:border-white/10">` : ''}</div>`;
-                    containerO.appendChild(div);
-                });
-            } else if(q.type === 'bs') {
-                let t = `<div class="border border-slate-300 dark:border-slate-700 rounded-2xl overflow-x-auto"><table class="w-full text-sm min-w-[400px]"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-300 dark:border-slate-700"><tr><th class="p-4 text-left">Pernyataan</th><th class="p-4 w-16 text-center">B</th><th class="p-4 w-16 text-center">S</th></tr></thead><tbody class="divide-y divide-slate-200 dark:divide-slate-700">`;
-                q.opsi.forEach((o, i) => {
-                    const tIdx = o.originalIndex !== undefined ? o.originalIndex : i;
-                    const val = savedVal ? savedVal[tIdx] : null;
-                    t += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"><td class="p-4 text-slate-700 dark:text-slate-300">${o.text}</td><td class="p-4 text-center"><input type="radio" name="bs_${i}" class="w-5 h-5 accent-emerald-500" ${val==='true'?'checked':''} onchange="saveBsAns(${tIdx}, 'true')"></td><td class="p-4 text-center"><input type="radio" name="bs_${i}" class="w-5 h-5 accent-red-500" ${val==='false'?'checked':''} onchange="saveBsAns(${tIdx}, 'false')"></td></tr>`;
-                });
-                containerO.innerHTML = t + `</tbody></table></div>`;
-            } else if(q.type === 'pgk') {
-                const sel = Array.isArray(savedVal) ? savedVal : [];
-                q.opsi.forEach((o, i) => {
-                    const tIdx = o.originalIndex;
-                    const isSel = sel.includes(tIdx);
-                    const div = document.createElement('div');
-                    div.className = `flex items-center gap-4 p-4 border rounded-2xl cursor-pointer transition-all ${isSel ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(56,189,248,0.2)]' : 'bg-white dark:bg-slate-800/30 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`;
-                    div.onclick = () => {
-                        let n = [...sel]; if(n.includes(tIdx)) n = n.filter(x=>x!==tIdx); else n.push(tIdx); saveAns(n);
-                    };
-                    div.innerHTML = `<div class="w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSel ? 'bg-primary border-primary' : 'border-slate-400 dark:border-slate-500'}">${isSel ? '<svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>' : ''}</div><div class="flex-1 text-slate-700 dark:text-slate-300 font-medium group-hover:text-slate-900 dark:group-hover:text-white">${o.text}</div>`;
-                    containerO.appendChild(div);
-                });
-            } else {
-                // --- PENAMBAHAN LACI SIMBOL MATEMATIKA UNTUK SISWA ---
-                if(q.type === 'esai-singkat') {
-                    // Wadah luar
-                    const wrapper = document.createElement('div');
-                    wrapper.className = "space-y-2 relative";
-                    
-                    // Baris atas: Label & Tombol Alfa
-                    const topBar = document.createElement('div');
-                    topBar.className = "flex justify-between items-center bg-white dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-300 dark:border-slate-600";
-                    topBar.innerHTML = `
-                        <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Jawaban Anda:</span>
-                        <button type="button" onclick="window.toggleSiswaMathKeyboard()" class="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg text-indigo-600 dark:text-indigo-400 font-serif font-bold text-lg hover:bg-indigo-100 dark:hover:bg-indigo-800/50 transition-colors shadow-sm" title="Buka Keyboard Matematika">
-                            α
-                        </button>
-                    `;
-                    
-                    // Laci Simbol (Tersembunyi)
-                    const kbContainer = document.createElement('div');
-                    kbContainer.id = "siswa-math-keyboard";
-                    kbContainer.className = "hidden p-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-2xl shadow-lg mt-2";
-                    kbContainer.innerHTML = '<div class="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 gap-1.5" id="siswa-math-grid"></div>';
-                    
-                    // Kotak Input Jawaban Satu Baris
-                    const input = document.createElement('input');
-                    input.type = "text";
-                    input.id = "input-jawaban-siswa";
-                    input.className = "glow-input w-full p-4 rounded-2xl text-lg font-bold bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 outline-none focus:ring-2 ring-primary mt-2";
-                    input.placeholder = "Ketik jawaban di sini...";
-                    input.value = savedVal || '';
-                    input.oninput = (e) => saveAns(e.target.value);
-                    
-                    wrapper.appendChild(topBar);
-                    wrapper.appendChild(kbContainer);
-                    wrapper.appendChild(input);
-                    containerO.appendChild(wrapper);
-                    
-                } else {
-                    // Ini untuk Esai Kompleks (Textarea Panjang Biasa)
-                    const ta = document.createElement('textarea');
-                    ta.className = "glow-input w-full p-5 rounded-2xl h-40 text-base leading-relaxed bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 outline-none focus:ring-2 ring-primary";
-                    ta.placeholder = "Ketik jawaban atau penjelasan panjang di sini...";
-                    ta.value = savedVal || '';
-                    ta.oninput = (e) => saveAns(e.target.value);
-                    containerO.appendChild(ta);
-                }
-
-                if(q.type === 'esai-kompleks') {
-                    const camDiv = document.createElement('div');
-                    camDiv.className = "mt-6 pt-6 border-t border-slate-200 dark:border-white/10";
-                    const uid = `cam-${idx}`;
-                    
-                    camDiv.innerHTML = `<label for="${uid}" class="cursor-pointer px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white text-sm font-bold flex items-center gap-2 w-max transition-all shadow-lg" onclick="window.setUploading(true);"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg> Foto Jawaban</label><input type="file" id="${uid}" accept="image/*" class="hidden" capture="environment">
-                    <div id="preview-${idx}" class="${ans.image ? 'mt-4' : 'mt-4 hidden'}">${ans.image ? `<div class="relative inline-block group"><img src="${ans.image}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="delImg(${idx})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>` : ''}</div>`;
-                    containerO.appendChild(camDiv);
-                    setTimeout(() => {
-                        const fi = document.getElementById(uid);
-                        if(fi) fi.onchange = async (e) => {
-                            if(e.target.files[0]) {
-                                window.setUploading(true);
-                                const base64 = await new Promise(r=>{ const fr=new FileReader(); fr.onload=x=>r(x.target.result); fr.readAsDataURL(e.target.files[0]); });
-                                const comp = await compressImage(base64);
-                                saveImg(idx, comp);
-                                document.getElementById(`preview-${idx}`).innerHTML = `<div class="relative inline-block group"><img src="${comp}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="delImg(${idx})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>`;
-                                document.getElementById(`preview-${idx}`).classList.remove('hidden');
-                                // TIDAK ADA PEMAKSAAN FULLSCREEN DI SINI LAGI, DIALIHKAN KE TOMBOL LANJUTKAN
-                            } else {
-                                window.setUploading(false);
-                            }
-                        };
-                    }, 100);
-                }
+            // Deteksi Batas Kelompok (Grup)
+            if (gid) {
+                while (startIdx > 0 && (questions[startIdx - 1].metadata?.groupId || questions[startIdx - 1].group_id) === gid) startIdx--;
+                while (endIdx < questions.length - 1 && (questions[endIdx + 1].metadata?.groupId || questions[endIndex + 1].group_id) === gid) endIdx++;
             }
 
-            if(window.MathJax) MathJax.typesetPromise([document.getElementById('q-content'), containerO]);
-            
-            document.getElementById('btn-prev').disabled = idx === 0;
-            if(idx === questions.length - 1) {
+            currentIndex = startIdx; 
+            const area = document.getElementById('exam-content-area');
+            let html = '';
+
+            for (let i = startIdx; i <= endIdx; i++) {
+                const q = questions[i];
+                const ans = answers[i];
+                const savedVal = ans.val;
+
+                // Wacana (Hanya dipanggil di awal kelompok)
+                if (i === startIdx && q.wacana) {
+                    html += `<div class="mb-8 p-6 bg-blue-50/60 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl text-slate-800 dark:text-slate-200 shadow-sm leading-relaxed soal-text" style="font-size: ${currentFontSize}%">${window.formatTextAman(q.wacana)}</div>`;
+                }
+
+                // Header Dinamis Per Soal (Nomor, Sinkron, Ragu-ragu)
+                html += `
+                <div class="flex items-center justify-between mb-4 pb-4 border-b border-slate-200 dark:border-white/5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-lg shadow-md">${i + 1}</div>
+                        <span class="px-2 py-1 bg-slate-200 dark:bg-slate-700/50 rounded-lg text-[10px] font-bold text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-white/5 uppercase">${(q.type || 'pg').toUpperCase()}</span>
+                        <button onclick="window.refreshSoalSekarang(${i})" id="btn-sync-${i}" class="px-2 py-1 bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-800 rounded-lg text-[10px] font-bold flex items-center gap-1 border border-sky-200 dark:border-sky-800 transition-all shadow-sm">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Sinkron
+                        </button>
+                    </div>
+                    <label class="flex items-center gap-2 cursor-pointer bg-amber-50 dark:bg-slate-800/30 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-white/5 hover:bg-amber-100 transition-all">
+                        <span class="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-wider">Ragu</span>
+                        <input type="checkbox" ${ans.ragu ? 'checked' : ''} onchange="window.toggleRagu(${i}, this.checked)" class="accent-amber-500 w-4 h-4 cursor-pointer">
+                    </label>
+                </div>`;
+
+                // Naskah Soal Utama
+                let naskahHtml = '';
+                if(q.audio) naskahHtml += `<audio controls src="${q.audio}" class="w-full mb-4"></audio>`;
+                naskahHtml += `<div class="soal-text" style="font-size: ${currentFontSize}%">${window.formatTextAman(q.naskah)}</div>`;
+                if(q.naskahImage) naskahHtml += `<img src="${q.naskahImage}" class="mt-2 rounded border max-w-full">`;
+                if(q.naskahBawah) naskahHtml += `<div class="soal-text mt-2" style="font-size: ${currentFontSize}%">${window.formatTextAman(q.naskahBawah)}</div>`;
+                html += `<div class="mb-6">${naskahHtml}</div>`;
+
+                // Area Opsi Jawaban
+                let opsiHtml = `<div class="space-y-3 pb-8 soal-text" style="font-size: ${currentFontSize}%">`;
+                
+                if (!q.type || q.type === 'pg' || q.type === 'pgk') {
+                    const isPgk = q.type === 'pgk';
+                    const inputType = isPgk ? 'checkbox' : 'radio';
+                    const sel = Array.isArray(savedVal) ? savedVal : [];
+                    
+                    q.opsi.forEach((o, optIdx) => {
+                        const tIdx = o.originalIndex !== undefined ? o.originalIndex : optIdx;
+                        const huruf = String.fromCharCode(65 + optIdx);
+                        let isSel = isPgk ? sel.includes(tIdx) : savedVal == tIdx;
+                        const txt = window.formatTextAman(typeof o === 'object' ? o.text : o);
+                        const imgOpt = (typeof o === 'object' && o.imageBase64) ? `<br><img src="${o.imageBase64}" class="max-h-40 mt-3 rounded-xl shadow-sm">` : '';
+                        const bentukHuruf = isPgk ? 'rounded-md' : 'rounded-full';
+
+                        opsiHtml += `
+                        <label class="flex items-start gap-4 p-4 border rounded-2xl cursor-pointer transition-all duration-200 ${isSel ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(56,189,248,0.2)]' : 'bg-white dark:bg-slate-800/30 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-500'}">
+                            <div class="flex items-center h-7 mt-0.5">
+                                <input type="${inputType}" name="opsi_${q.id}" value="${tIdx}" ${isSel ? 'checked' : ''} onchange="window.saveAns(${i}, '${tIdx}', ${isPgk}, '${q.type}')" class="w-5 h-5 accent-primary cursor-pointer hidden">
+                                <div class="w-8 h-8 ${bentukHuruf} border flex items-center justify-center font-black text-sm transition-colors ${isSel ? 'bg-primary text-white border-primary' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400'}">${isPgk ? (isSel ? '✓' : '') : huruf}</div>
+                            </div>
+                            <div class="flex-1 text-slate-700 dark:text-slate-300 font-medium leading-relaxed">${txt}${imgOpt}</div>
+                        </label>`;
+                    });
+                } else if (q.type === 'bs') {
+                    opsiHtml += `<div class="border border-slate-300 dark:border-slate-700 rounded-2xl overflow-x-auto"><table class="w-full text-sm min-w-[400px]"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-300 dark:border-slate-700"><tr><th class="p-4 text-left">Pernyataan</th><th class="p-4 w-16 text-center">B</th><th class="p-4 w-16 text-center">S</th></tr></thead><tbody class="divide-y divide-slate-200 dark:divide-slate-700">`;
+                    q.opsi.forEach((o, optIdx) => {
+                        const tIdx = o.originalIndex !== undefined ? o.originalIndex : optIdx;
+                        const val = savedVal ? savedVal[tIdx] : null;
+                        const txt = window.formatTextAman(typeof o === 'object' ? o.text : o);
+                        opsiHtml += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"><td class="p-4 text-slate-700 dark:text-slate-300 leading-relaxed">${txt}</td><td class="p-4 text-center"><input type="radio" name="bs_${i}_${tIdx}" class="w-5 h-5 accent-emerald-500 cursor-pointer" ${val==='true'?'checked':''} onchange="window.saveBsAns(${i}, ${tIdx}, 'true')"></td><td class="p-4 text-center"><input type="radio" name="bs_${i}_${tIdx}" class="w-5 h-5 accent-red-500 cursor-pointer" ${val==='false'?'checked':''} onchange="window.saveBsAns(${i}, ${tIdx}, 'false')"></td></tr>`;
+                    });
+                    opsiHtml += `</tbody></table></div>`;
+                } else if (q.type === 'esai-singkat') {
+                    opsiHtml += `
+                        <div class="space-y-2 relative">
+                            <div class="flex justify-between items-center bg-white dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-300 dark:border-slate-600">
+                                <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Jawaban Anda:</span>
+                                <button type="button" onclick="window.toggleSiswaMathKeyboard(${i})" class="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-lg text-indigo-600 dark:text-indigo-400 font-serif font-bold text-lg hover:bg-indigo-100 transition-colors shadow-sm">α</button>
+                            </div>
+                            <div id="siswa-math-keyboard-${i}" class="hidden p-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-2xl shadow-lg mt-2">
+                                <div class="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 gap-1.5" id="siswa-math-grid-${i}"></div>
+                            </div>
+                            <input type="text" id="input-jawaban-siswa-${i}" value="${savedVal || ''}" oninput="window.saveAns(${i}, this.value, false, 'esai-singkat')" class="glow-input w-full p-4 rounded-2xl text-lg font-bold bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 outline-none focus:ring-2 ring-primary mt-2" placeholder="Ketik jawaban di sini...">
+                        </div>`;
+                } else if (q.type === 'esai-kompleks') {
+                    opsiHtml += `<textarea oninput="window.saveAns(${i}, this.value, false, 'esai-kompleks')" class="glow-input w-full p-5 rounded-2xl h-40 text-base leading-relaxed bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 outline-none focus:ring-2 ring-primary custom-scrollbar" placeholder="Ketik jawaban panjang di sini...">${savedVal || ''}</textarea>`;
+                    opsiHtml += `
+                        <div class="mt-6 pt-6 border-t border-slate-200 dark:border-white/10">
+                            <label for="cam-${i}" class="cursor-pointer px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white text-sm font-bold flex items-center gap-2 w-max transition-all shadow-lg" onclick="window.setUploading(true);">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg> Foto Jawaban
+                            </label>
+                            <input type="file" id="cam-${i}" accept="image/*" class="hidden" capture="environment" onchange="window.handleImageUpload(event, ${i})">
+                            <div id="preview-${i}" class="${ans.image ? 'mt-4' : 'mt-4 hidden'}">
+                                ${ans.image ? `<div class="relative inline-block group"><img src="${ans.image}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="window.delImg(${i})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>` : ''}
+                            </div>
+                        </div>`;
+                }
+
+                opsiHtml += `</div>`;
+                html += opsiHtml;
+
+                // Garis Putus-putus pembatas antar soal
+                if (i < endIdx) html += `<div class="my-8 border-b-4 border-dotted border-slate-300 dark:border-slate-700"></div>`;
+            }
+
+            area.innerHTML = html;
+
+            // Sembunyikan header lama karena kita memindahkannya secara dinamis ke tiap soal
+            const topBarAsli = document.querySelector('.flex.items-center.justify-between.mb-6.pb-6.border-b');
+            if (topBarAsli) topBarAsli.style.display = 'none';
+
+            if(window.MathJax) MathJax.typesetPromise([area]);
+
+            // Pengendali Tombol Navigasi Bawah
+            document.getElementById('btn-prev').disabled = startIdx === 0;
+            if(endIdx === questions.length - 1) {
                 document.getElementById('btn-next').classList.add('hidden');
                 document.getElementById('btn-finish').classList.remove('hidden');
             } else {
                 document.getElementById('btn-next').classList.remove('hidden');
                 document.getElementById('btn-finish').classList.add('hidden');
             }
-            document.getElementById('check-ragu').checked = answers[idx].ragu;
+
             updateNavStyle();
+            if (area) area.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.refreshSoalSekarang = async (idx) => {
+            const btn = document.getElementById(`btn-sync-${idx}`);
+            const iconAsli = btn.innerHTML;
+            btn.innerHTML = '⏳ Menarik data...';
+            btn.disabled = true;
+            try {
+                const qId = questions[idx].id;
+                const snap = await getDoc(doc(db, 'bank_soal', qId));
+                if(snap.exists()) {
+                    const d = snap.data();
+                    const ops = d.opsi ? d.opsi.map((o, i) => ({ ...o, originalIndex: i })) : [];
+                    questions[idx] = { id: snap.id, ...d, opsi: ops };
+                    if(examData.settingAcakOpsi && (d.type === 'pg' || d.type === 'pgk')) shuffleArray(questions[idx].opsi);
+                    loadQuestion(currentIndex);
+                } else {
+                    alert("Soal mungkin sudah dihapus dari server.");
+                    btn.innerHTML = iconAsli;
+                    btn.disabled = false;
+                }
+            } catch(e) {
+                alert("Gagal sinkron. Pastikan internet stabil.");
+                btn.innerHTML = iconAsli;
+                btn.disabled = false;
+            }
+        };
+
+        window.saveAns = (idx, v, isPgk, type) => {
+            if (isPgk) {
+                let sel = answers[idx].val;
+                if (!Array.isArray(sel)) sel = [];
+                let n = [...sel]; 
+                if(n.includes(v)) n = n.filter(x=>x!==v); else n.push(v); 
+                answers[idx].val = n;
+            } else {
+                answers[idx].val = v;
+            }
+            persist(); 
+            updateNavStyle();
+            if(type === 'pg' || type === 'pgk') loadQuestion(currentIndex); 
+        };
+
+        window.saveBsAns = (idx, r, v) => { 
+            let d = answers[idx].val || {}; 
+            d[r] = v; 
+            answers[idx].val = d;
+            persist();
+            updateNavStyle(); 
+        };
+
+        window.toggleRagu = (idx, isChecked) => {
+            answers[idx].ragu = isChecked;
+            persist();
+            updateNavStyle();
+        };
+
+        window.handleImageUpload = async (e, idx) => {
+            if(e.target.files[0]) {
+                window.setUploading(true);
+                const base64 = await new Promise(r=>{ const fr=new FileReader(); fr.onload=x=>r(x.target.result); fr.readAsDataURL(e.target.files[0]); });
+                const comp = await compressImage(base64);
+                answers[idx].image = comp;
+                persist();
+                document.getElementById(`preview-${idx}`).innerHTML = `<div class="relative inline-block group"><img src="${comp}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="window.delImg(${idx})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>`;
+                document.getElementById(`preview-${idx}`).classList.remove('hidden');
+            } else {
+                window.setUploading(false);
+            }
+        };
+
+        window.delImg = (idx) => { 
+            delete answers[idx].image; 
+            persist(); 
+            const p = document.getElementById(`preview-${idx}`);
+            p.innerHTML = '';
+            p.classList.add('hidden');
+        };
+
+        function persist() {
+            localStorage.setItem(`exam_${examData.kodeUjian}_${studentData.nis}`, JSON.stringify(answers));
+            const s = document.getElementById('save-status'); 
+            if(s) { s.style.opacity = 1; setTimeout(()=>s.style.opacity=0, 1000); }
+        }
+
+        window.prevQ = () => {
+            // Karena indeks otomatis ditarik ke awal kelompok oleh loadQuestion,
+            // kita cukup mengurangi index dari posisi saat ini.
+            let p = currentIndex - 1;
+            if (p >= 0) loadQuestion(p);
+        };
+
+        window.nextQ = () => {
+            // Kita harus melompati seluruh soal yang ada di kelompok saat ini
+            const gid = questions[currentIndex].metadata?.groupId || questions[currentIndex].group_id;
+            let e = currentIndex;
+            if (gid) {
+                while (e < questions.length - 1 && (questions[e + 1].metadata?.groupId || questions[e + 1].group_id) === gid) e++;
+            }
+            if (e + 1 < questions.length) loadQuestion(e + 1);
         };
 
 		// --- FITUR SINKRONISASI SOAL MANUAL ---
@@ -1450,22 +1560,6 @@
                 btn.classList.remove('opacity-50', 'cursor-wait');
             }
         };
-        window.saveAns = (v) => { 
-            answers[currentIndex].val = v; persist(); updateNavStyle();
-            if(questions[currentIndex].type !== 'esai-singkat' && questions[currentIndex].type !== 'esai-kompleks') loadQuestion(currentIndex);
-        };
-        window.saveBsAns = (r, v) => { let d = answers[currentIndex].val || {}; d[r] = v; saveAns(d); };
-        window.saveImg = (idx, b64) => { answers[idx].image = b64; persist(); };
-        window.delImg = (idx) => { delete answers[idx].image; persist(); loadQuestion(idx); };
-        
-        function persist() {
-            localStorage.setItem(`exam_${examData.kodeUjian}_${studentData.nis}`, JSON.stringify(answers));
-            const s = document.getElementById('save-status'); s.style.opacity = 1; setTimeout(()=>s.style.opacity=0, 1000);
-        }
-
-        window.prevQ = () => loadQuestion(currentIndex - 1);
-        window.nextQ = () => loadQuestion(currentIndex + 1);
-        document.getElementById('check-ragu').onchange = (e) => { answers[currentIndex].ragu = e.target.checked; persist(); updateNavStyle(); };
 
         function renderNav() {
             const makeBtn = (i, idPrefix) => {
@@ -1780,9 +1874,9 @@
             '∈','∉','∪','∩','∅'
         ];
 
-        window.toggleSiswaMathKeyboard = () => {
-            const kb = document.getElementById('siswa-math-keyboard');
-            const grid = document.getElementById('siswa-math-grid');
+        window.toggleSiswaMathKeyboard = (idx) => {
+            const kb = document.getElementById(`siswa-math-keyboard-${idx}`);
+            const grid = document.getElementById(`siswa-math-grid-${idx}`);
             
             if (grid && grid.children.length === 0) {
                 simbolMatematikaSiswa.forEach(sym => {
@@ -1790,15 +1884,15 @@
                     btn.type = 'button';
                     btn.className = 'p-1.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-sm font-bold hover:bg-primary hover:text-white text-slate-700 dark:text-slate-200 transition-colors shadow-sm';
                     btn.textContent = sym;
-                    btn.onclick = () => window.insertSimbolSiswa(sym);
+                    btn.onclick = () => window.insertSimbolSiswa(sym, idx);
                     grid.appendChild(btn);
                 });
             }
             if (kb) kb.classList.toggle('hidden');
         };
 
-        window.insertSimbolSiswa = (simbol) => {
-            const input = document.getElementById('input-jawaban-siswa');
+        window.insertSimbolSiswa = (simbol, idx) => {
+            const input = document.getElementById(`input-jawaban-siswa-${idx}`);
             if(!input) return;
             
             const start = input.selectionStart || 0;
@@ -1808,8 +1902,8 @@
             const newVal = text.substring(0, start) + simbol + text.substring(end);
             input.value = newVal;
             
-            // Simpan perubahan langsung ke Firebase (meniru efek mengetik)
-            saveAns(newVal); 
+            // Simpan perubahan langsung ke Firebase dan Memori Lokal
+            window.saveAns(idx, newVal, false, 'esai-singkat'); 
             
             input.focus();
             input.setSelectionRange(start + simbol.length, start + simbol.length);
