@@ -105,6 +105,7 @@
                 <button onclick="filterKategori('TKA')" id="tab-TKA" class="kategori-tab py-3 border-b-2 border-transparent font-bold text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 whitespace-nowrap transition-colors">Fokus TKA</button>
                 <button onclick="filterKategori('UTBK')" id="tab-UTBK" class="kategori-tab py-3 border-b-2 border-transparent font-bold text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 whitespace-nowrap transition-colors">Pejuang UTBK</button>
 				<button onclick="bukaForumGlobal()" id="tab-Forum" class="kategori-tab py-3 border-b-2 border-transparent font-bold text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 whitespace-nowrap transition-colors flex items-center gap-2"><i class="ph ph-chats-circle text-lg"></i> Ruang Diskusi</button>
+				<button onclick="bukaAlatPeraga3D()" id="tab-3D" class="kategori-tab py-3 border-b-2 border-transparent font-bold text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 whitespace-nowrap transition-colors flex items-center gap-2"><i class="ph ph-cube text-lg"></i> Alat Peraga 3D</button>
             </div>
         </header>
 
@@ -144,6 +145,31 @@
                 </div>
                 <div id="list-pesan-global" class="space-y-4">
                     <!-- Pesan dirender di sini -->
+                </div>
+            </div>
+			<!-- WADAH ALAT PERAGA 3D (SISWA) -->
+            <div id="wadah-alat-peraga-3d" class="hidden flex-col gap-6 max-w-5xl mx-auto w-full pb-10">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col" style="height: 80vh;">
+                    
+                    <!-- Header & Tombol Fullscreen -->
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-700 pb-4 shrink-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-sky-100 text-sky-600 rounded-lg flex items-center justify-center font-bold text-xl"><i class="ph ph-cube"></i></div>
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-800 dark:text-white">Alat Peraga Geometri 3D</h2>
+                                <p class="text-xs text-slate-500">Gunakan ruang ini untuk memvisualisasikan bangun ruang secara mandiri.</p>
+                            </div>
+                        </div>
+                        <button onclick="bukaFullscreen3DSiswa()" class="bg-sky-100 hover:bg-sky-200 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 shadow-sm border border-sky-200 dark:border-sky-800">
+                            <i class="ph ph-corners-out text-lg"></i> Layar Penuh
+                        </button>
+                    </div>
+                    
+                    <!-- Wadah Iframe -->
+                    <div id="bingkai-3d-siswa" class="flex-1 w-full bg-slate-50 dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 relative">
+                        <iframe src="visual 3d-siswa.html" class="absolute inset-0 w-full h-full border-none bg-transparent" allowfullscreen></iframe>
+                    </div>
+
                 </div>
             </div>
         </main>
@@ -462,6 +488,8 @@
             // Mode Etalase (Tampilkan Rak Buku, Sembunyikan Forum)
             document.getElementById('wadah-forum-global').classList.add('hidden');
             document.getElementById('wadah-forum-global').classList.remove('flex');
+			const wadah3D = document.getElementById('wadah-alat-peraga-3d');
+            if(wadah3D) { wadah3D.classList.add('hidden'); wadah3D.classList.remove('flex'); }
             document.getElementById('modul-container').style.display = '';
             document.getElementById('btn-sub-materi').parentElement.style.display = 'flex';
             if (subMenuAktif === 'materi') document.getElementById('filter-rak').classList.remove('hidden');
@@ -484,6 +512,8 @@
             document.getElementById('modul-container').style.display = 'none';
             document.getElementById('btn-sub-materi').parentElement.style.display = 'none';
             document.getElementById('filter-rak').classList.add('hidden');
+			const wadah3D = document.getElementById('wadah-alat-peraga-3d');
+            if(wadah3D) { wadah3D.classList.add('hidden'); wadah3D.classList.remove('flex'); }
             
             document.getElementById('wadah-forum-global').classList.remove('hidden');
             document.getElementById('wadah-forum-global').classList.add('flex');
@@ -493,6 +523,41 @@
             
             if(typeof loadForumGlobal === 'function') loadForumGlobal();
         }
+		window.bukaAlatPeraga3D = function() {
+            // 1. Atur warna tab
+            document.querySelectorAll('.kategori-tab').forEach(tab => {
+                tab.classList.remove('text-indigo-600', 'border-indigo-600', 'dark:text-indigo-400', 'dark:border-indigo-400');
+                tab.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+            });
+            const activeTab = document.getElementById('tab-3D');
+            if(activeTab) {
+                activeTab.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+                activeTab.classList.add('text-indigo-600', 'border-indigo-600', 'dark:text-indigo-400', 'dark:border-indigo-400');
+            }
+
+            // 2. Sembunyikan semua wadah lain (Rak Buku & Forum)
+            document.getElementById('modul-container').style.display = 'none';
+            document.getElementById('btn-sub-materi').parentElement.style.display = 'none';
+            document.getElementById('filter-rak').classList.add('hidden');
+            document.getElementById('wadah-forum-global').classList.add('hidden');
+            document.getElementById('wadah-forum-global').classList.remove('flex');
+            
+            // 3. Tampilkan wadah 3D
+            const wadah3D = document.getElementById('wadah-alat-peraga-3d');
+            wadah3D.classList.remove('hidden');
+            wadah3D.classList.add('flex');
+        };
+
+        window.bukaFullscreen3DSiswa = function() {
+            const bingkai = document.getElementById('bingkai-3d-siswa');
+            if (bingkai) {
+                if (bingkai.requestFullscreen) {
+                    bingkai.requestFullscreen();
+                } else if (bingkai.webkitRequestFullscreen) {
+                    bingkai.webkitRequestFullscreen();
+                }
+            }
+        };
 
         window.renderModul = function() {
             const container = document.getElementById('modul-container');
