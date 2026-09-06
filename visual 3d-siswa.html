@@ -310,9 +310,24 @@
             helpersGroup = new THREE.Group();
             scene.add(baseCubeGroup);
             scene.add(helpersGroup);
-            
+
+            // TAMPILKAN BENTUK STANDAR DULU SEBAGAI CADANGAN
             generateShape(); 
-            updateDynamicInputs(); 
+            updateDynamicInputs();
+
+            // LALU EKSEKUSI RESEP JIKA ADA
+            let resepStr = localStorage.getItem('sakti_resep_3d_temp');
+            if (!resepStr && window.location.hash) {
+                resepStr = decodeURIComponent(window.location.hash.substring(1));
+            }
+
+            if (resepStr) {
+                // Sembunyikan panel agar layar HP siswa lega
+                document.getElementById('ui-panel').classList.add('hidden-panel');
+                
+                // Panggil mesin pembuat ulang bawaan dari sistem guru!
+                setTimeout(() => { muatResepOtomatis(resepStr); }, 100);
+            }
         }
 
         function generateShape() {
@@ -456,9 +471,14 @@
         }
 
         function setupUI() {
-            document.getElementById('btn-toggle-ui').addEventListener('click', () => {
-                document.getElementById('ui-panel').classList.toggle('hidden-panel');
-            });
+			document.getElementById('btn-toggle-ui').addEventListener('click', () => {
+				document.getElementById('ui-panel').classList.toggle('hidden-panel');
+			});
+
+			// --- TAMBAHAN UNTUK SISWA: Sembunyikan panel UI secara otomatis jika membawa resep ---
+			if (localStorage.getItem('sakti_resep_3d_temp') || window.location.hash) {
+				document.getElementById('ui-panel').classList.add('hidden-panel');
+			}
             document.getElementById('btn-generate').addEventListener('click', () => {
                 generateShape();
             });
@@ -1054,6 +1074,85 @@
             init();
             animate();
         };
+		
+		function muatResepOtomatis(jsonStr) {
+            try {
+                const recipe = JSON.parse(jsonStr);
+                
+                // 1. Merakit Ulang Pondasi
+                document.getElementById('shape-type').value = recipe.shape;
+                document.getElementById('shape-type').dispatchEvent(new Event('change'));
+
+                if (recipe.shape === 'BALOK') {
+                    document.getElementById('cube-name').value = recipe.baseParams.name; document.getElementById('input-p').value = recipe.baseParams.p;
+                    document.getElementById('input-l').value = recipe.baseParams.l; document.getElementById('input-t').value = recipe.baseParams.t;
+                } else {
+                    document.getElementById('limas-name').value = recipe.baseParams.name; document.getElementById('input-limas-p').value = recipe.baseParams.p;
+                    document.getElementById('input-limas-l').value = recipe.baseParams.l; document.getElementById('input-limas-t').value = recipe.baseParams.t;
+                    document.getElementById('limas-t-type').value = recipe.baseParams.tType;
+                }
+                generateShape();
+
+                // 2. Merakit Ulang Elemen Bebas (Simulasi Klik Otomatis)
+                recipe.actions.forEach(a => {
+                    if (a.type === 'point') {
+                        document.getElementById('point-name').value = a.name; document.getElementById('point-edge').value = a.edge;
+                        document.getElementById('point-ratio').value = a.ratio; document.getElementById('btn-add-point').click();
+                    } 
+                    else if (a.type === 'intersect3d') {
+                        document.getElementById('intersect-line1').value = a.l1;
+                        document.getElementById('intersect-line2').value = a.l2;
+                        document.getElementById('intersect-pt-name').value = a.name;
+                        document.getElementById('btn-add-intersect-3d').click();
+                    }
+                    else if (a.type === 'line') {
+                       document.getElementById('custom-line').value = a.lineName; document.getElementById('custom-line-color').value = a.colorHex;
+                       document.getElementById('btn-add-line').click();
+                    } 
+                    else if (a.type === 'label') {
+                        document.getElementById('label-line-target').value = a.lineName; document.getElementById('label-line-text').value = a.rawText;
+                        document.getElementById('btn-add-line-label').click();
+                    } 
+                    else if (a.type === 'plane') {
+                        document.getElementById('custom-plane').value = a.planeName; document.getElementById('custom-color').value = a.colorHex;
+                        document.getElementById('btn-add-plane').click();
+                    } 
+                    else if (a.type === 'angle') {
+                        document.getElementById('angle-points').value = a.pts; document.getElementById('angle-color').value = a.colorHex;
+                        document.getElementById('angle-symbol').value = a.symbol; document.getElementById('angle-display').value = a.displayMode;
+                        document.getElementById('btn-add-angle').click();
+                    }
+                    else if (a.type === 'calc') {
+                        document.getElementById('mode-selector').value = a.mode;
+                        document.getElementById('mode-selector').dispatchEvent(new Event('change'));
+                        
+                        if (a.mode === '1') {
+                            document.getElementById('input-p1').value = a.inputs.p1;
+                            document.getElementById('input-p2').value = a.inputs.p2;
+                        } else if (a.mode === '2') {
+                            document.getElementById('input-pt').value = a.inputs.pt;
+                            document.getElementById('input-line').value = a.inputs.line;
+                        } else if (a.mode === '3') {
+                            document.getElementById('input-pt').value = a.inputs.pt;
+                            document.getElementById('input-plane').value = a.inputs.plane;
+                        } else if (a.mode === '4') {
+                            document.getElementById('input-line').value = a.inputs.line;
+                            document.getElementById('input-plane').value = a.inputs.plane;
+                        } else if (a.mode === '5') {
+                            document.getElementById('input-plane1').value = a.inputs.plane1;
+                            document.getElementById('input-plane2').value = a.inputs.plane2;
+                        }
+                        // Khusus siswa: matikan parameter 'showHitung' agar nilai asli tidak bocor
+                        executeMode(false);
+                    }
+                });
+                
+                // Bersihkan memori agar tidak mengganggu soal lain
+                localStorage.removeItem('sakti_resep_3d_temp');
+            } catch (err) { 
+                console.error("Gagal membaca resep", err);
+            }
+        }
     </script>
 </body>
 </html>
