@@ -293,7 +293,17 @@
         </div>
     </div>
 
-    <script>
+    <!-- MODAL 3D SAAT UJIAN -->
+    <div id="modal-3d-ujian" class="fixed inset-0 z-[200] bg-slate-900 flex-col hidden transition-colors duration-300">
+        <div class="h-14 bg-slate-800 border-b border-slate-700 flex justify-between items-center px-4 shrink-0 text-white shadow-md">
+            <div class="font-bold flex items-center gap-2 text-sky-400"><i class="ph ph-cube text-2xl"></i> Alat Peraga 3D</div>
+            <button onclick="tutupVisual3DUjian()" class="bg-red-500 hover:bg-red-600 px-4 py-1.5 rounded-lg text-sm font-bold shadow-md transition-colors"><i class="ph ph-x"></i> Tutup 3D</button>
+        </div>
+        <div class="flex-1 w-full relative">
+            <iframe id="iframe-3d-ujian" src="" class="absolute inset-0 w-full h-full border-none bg-white"></iframe>
+        </div>
+    </div>
+	<script>
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
             localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
@@ -558,6 +568,22 @@
                 }
             }
         };
+
+		// --- FUNGSI BUKA/TUTUP 3D DI DALAM UJIAN ---
+			window.bukaVisual3DUjian = function(resepStr) {
+			document.getElementById('modal-3d-ujian').classList.remove('hidden');
+			document.getElementById('modal-3d-ujian').classList.add('flex');
+
+			// JALUR RAHASIA: Titipkan resep ke ekor URL (Hash) agar kebal dari blokir file:/// lokal
+			const urlAman = 'visual 3d-siswa.html#' + encodeURIComponent(resepStr);
+			document.getElementById('iframe-3d-ujian').src = urlAman;
+		};
+
+		window.tutupVisual3DUjian = function() {
+			document.getElementById('modal-3d-ujian').classList.add('hidden');
+			document.getElementById('modal-3d-ujian').classList.remove('flex');
+			document.getElementById('iframe-3d-ujian').src = ''; // Bersihkan agar HP tidak ngelag
+		};
 
         window.renderModul = function() {
             const container = document.getElementById('modul-container');
@@ -1087,6 +1113,12 @@
                 const teksSoal = window.formatTextAman(soalData.naskah || soalData.soal_teks || "Teks soal tidak tersedia.");
                 let imgSoal = soalData.naskahImage ? `<img src="${soalData.naskahImage}" class="max-h-64 mt-3 rounded-lg shadow border border-slate-200">` : '';
                 if(!soalData.naskahImage && soalData.gambar) imgSoal = `<img src="${soalData.gambar}" class="max-h-64 mt-3 rounded-lg shadow">`;
+				// --- DETEKSI RESEP 3D UNTUK SISWA ---
+				let btn3DHtml = '';
+				if (soalData.metadata && soalData.metadata.resep3d) {
+					const safeResep = soalData.metadata.resep3d.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+					btn3DHtml = `<button onclick="bukaVisual3DUjian('${safeResep}')" class="mt-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-md shadow-sky-500/30 flex items-center gap-2 transition-all active:scale-95 w-max text-sm"><i class="ph ph-cube text-xl"></i> Lihat Visual 3D Interaktif</button>`;
+				}
                 
                 const tipeLabel = (soalData.type || 'PG').toUpperCase();
                 let opsiHtml = '';
@@ -1133,7 +1165,7 @@
                             <span class="text-[10px] font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600">${tipeLabel}</span>
                         </div>
                     </div>
-                    <div class="text-base md:text-lg font-semibold mb-6 leading-relaxed text-slate-800 dark:text-slate-100">${teksSoal + imgSoal}</div>
+                    <div class="text-base md:text-lg font-semibold mb-6 leading-relaxed text-slate-800 dark:text-slate-100">${teksSoal + imgSoal + btn3DHtml}</div>
                     <div class="space-y-3">${opsiHtml}</div>
                 </div>`;
             });
