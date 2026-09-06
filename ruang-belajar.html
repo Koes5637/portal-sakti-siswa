@@ -324,16 +324,16 @@
             });
 
             if (mode === 'materi') {
-                panelKiri.style.width = '100%'; panelKiri.style.display = 'flex';
-                panelKanan.style.width = '0%'; panelKanan.style.display = 'none';
+                panelKiri.style.width = '100%'; panelKiri.style.height = '100%'; panelKiri.style.display = 'flex';
+                panelKanan.style.display = 'none';
                 if(tombol.length > 0) tombol[0].classList.add('bg-indigo-100', 'dark:bg-indigo-900/60', 'text-indigo-700', 'dark:text-indigo-400');
             } else if (mode === 'soal') {
-                panelKiri.style.width = '0%'; panelKiri.style.display = 'none';
-                panelKanan.style.width = '100%'; panelKanan.style.display = 'flex';
+                panelKiri.style.display = 'none';
+                panelKanan.style.width = '100%'; panelKanan.style.height = '100%'; panelKanan.style.display = 'flex';
                 if(tombol.length > 0) tombol[2].classList.add('bg-indigo-100', 'dark:bg-indigo-900/60', 'text-indigo-700', 'dark:text-indigo-400');
             } else {
-                panelKiri.style.width = '50%'; panelKiri.style.display = 'flex';
-                panelKanan.style.width = '50%'; panelKanan.style.display = 'flex';
+                panelKiri.style.width = ''; panelKiri.style.height = ''; panelKiri.style.display = 'flex';
+                panelKanan.style.width = ''; panelKanan.style.height = ''; panelKanan.style.display = 'flex';
                 if(tombol.length > 0) tombol[1].classList.add('bg-indigo-100', 'dark:bg-indigo-900/60', 'text-indigo-700', 'dark:text-indigo-400');
             }
         };
@@ -730,6 +730,9 @@
             clearInterval(timerInterval);
             const timerDisplay = document.getElementById('timer-display');
             
+            // Jika durasi tidak disetel, hentikan fungsi ini agar timer tidak jalan
+            if (!durasiMenit || durasiMenit <= 0) return;
+            
             let batasAkhir = null;
 
             if (batasWaktuISO) batasAkhir = new Date(batasWaktuISO).getTime();
@@ -927,8 +930,14 @@
             }
             
             document.getElementById('footer-tugas').classList.remove('hidden');
-            document.getElementById('wadah-timer').classList.remove('hidden');
             document.getElementById('header-panel-kiri').classList.remove('hidden');
+            
+            // Tampilkan timer HANYA jika durasi menit diisi lebih dari 0
+            if (modulAktif.durasi_menit && modulAktif.durasi_menit > 0) {
+                document.getElementById('wadah-timer').classList.remove('hidden');
+            } else {
+                document.getElementById('wadah-timer').classList.add('hidden');
+            }
             
             let kontenKiri = modulAktif.materi_html || "Bacalah wacana dengan saksama.";
             
