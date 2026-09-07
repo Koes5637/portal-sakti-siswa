@@ -1270,9 +1270,20 @@
                             if (!soal.type || soal.type === 'pg') {
                                 if (String(jwbSiswa) === String(kunciAsli)) poinSoalSiswa = bobotSoal;
                             } else if (soal.type === 'esai-singkat') {
-                                let safeSiswa = String(jwbSiswa || '').trim().toLowerCase().replace(/\s+/g, '');
-                                let safeKunci = String(kunciAsli || '').trim().toLowerCase().replace(/\s+/g, '');
-                                if (safeSiswa === safeKunci) poinSoalSiswa = bobotSoal;
+                                let rawSiswa = String(jwbSiswa || '').trim().toLowerCase();
+                                let rawKunci = String(kunciAsli || '').trim().toLowerCase();
+
+                                if (rawKunci.includes(',')) {
+                                    // Mode Cerdas: Cek kemunculan semua kata kunci acak
+                                    let arrKunci = rawKunci.split(',').map(k => k.trim());
+                                    let benarSemua = arrKunci.every(k => rawSiswa.includes(k));
+                                    if (benarSemua) poinSoalSiswa = bobotSoal;
+                                } else {
+                                    // Mode Klasik: Pencocokan persis tanpa spasi
+                                    let safeSiswa = rawSiswa.replace(/\s+/g, '');
+                                    let safeKunci = rawKunci.replace(/\s+/g, '');
+                                    if (safeSiswa === safeKunci) poinSoalSiswa = bobotSoal;
+                                }
                             } else if (soal.type === 'pgk') {
                                 let arrSiswa = Array.isArray(jwbSiswa) ? jwbSiswa.map(String) : [];
                                 let arrKunci = Array.isArray(kunciAsli) ? kunciAsli.map(String) : [];
