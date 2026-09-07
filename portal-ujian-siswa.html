@@ -755,7 +755,6 @@
                 
                 const limit = getCheatLimit();
                 cheatCount = Math.max(0, limit); 
-                lastCheatTime = Date.now();
                 
                 const key = `cheat_${examData.kodeUjian}_${studentData.nis}`;
                 localStorage.setItem(key, cheatCount);
@@ -763,7 +762,13 @@
                 const resRef = doc(db, 'hasil_ujian', `${examData.kodeUjian}_${studentData.nis}`);
                 updateDoc(resRef, { pelanggaran: cheatCount }).catch(e=>{});
 
+                // Set waktu ke masa depan (24 jam) agar kebal dari deteksi curang selama alert masih menggantung di layar
+                lastCheatTime = Date.now() + 86400000;
+
                 alert("Gembok terbuka! Kesempatan TERAKHIR. Jangan keluar lagi.");
+                
+                // PERBAIKAN: Mulai hitung cooldown 3 detik tepat SETELAH guru/siswa klik "OK"
+                lastCheatTime = Date.now();
                 document.documentElement.requestFullscreen().catch(e=>{});
             } else {
                 alert("PIN Guru Salah!");
@@ -1690,12 +1695,20 @@
                             max += bobot;
                             
                             let ok = false;
-                            // MESIN ANTI-SPASI: Menyedot seluruh spasi sebelum dikoreksi
-                            const sAns = (ans || '').toString().trim().toLowerCase().replace(/\s+/g, '');
-                            const sKey = (kd.kunci || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+							const rawAns = (ans || '').toString().trim().toLowerCase();
+							const rawKey = (kd.kunci || '').toString().trim().toLowerCase();
 
-                            if(kd.tipe === 'pg' && ans == kd.kunci) ok = true;
-                            else if(kd.tipe === 'esai-singkat' && sAns === sKey && sKey !== '') ok = true;
+							if(kd.tipe === 'pg' && ans == kd.kunci) ok = true;
+							else if(kd.tipe === 'esai-singkat') {
+								if (rawKey.includes(',')) {
+									let arrKunci = rawKey.split(',').map(k => k.trim());
+									if (arrKunci.every(k => rawAns.includes(k))) ok = true;
+								} else {
+									let sAns = rawAns.replace(/\s+/g, '');
+									let sKey = rawKey.replace(/\s+/g, '');
+									if (sAns === sKey && sKey !== '') ok = true;
+								}
+							}
                             else if(kd.tipe === 'pgk' && Array.isArray(ans) && Array.isArray(kd.kunci) && ans.sort().toString() === kd.kunci.sort().toString()) ok = true;
                             else if(kd.tipe === 'bs') {
                                 let m = 0, tot = kd.kunci.length;
@@ -1776,12 +1789,20 @@
                     
                     let statusJawaban = '<span class="text-red-500 font-bold bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded text-xs">SALAH ✕</span>';
                     let ok = false;
-                    // MESIN ANTI-SPASI: Menyedot seluruh spasi untuk tampilan pembahasan
-                    const sAns = (ans || '').toString().trim().toLowerCase().replace(/\s+/g, '');
-                    const sKey = (kunciBenar || '').toString().trim().toLowerCase().replace(/\s+/g, '');
+					const rawAns = (ans || '').toString().trim().toLowerCase();
+					const rawKey = (kunciBenar || '').toString().trim().toLowerCase();
 
-                    if(kd.tipe === 'pg' && ans == kunciBenar) ok = true;
-                    else if(kd.tipe === 'esai-singkat' && sAns === sKey && sKey !== '') ok = true;
+					if(kd.tipe === 'pg' && ans == kunciBenar) ok = true;
+					else if(kd.tipe === 'esai-singkat') {
+						if (rawKey.includes(',')) {
+							let arrKunci = rawKey.split(',').map(k => k.trim());
+							if (arrKunci.every(k => rawAns.includes(k))) ok = true;
+						} else {
+							let sAns = rawAns.replace(/\s+/g, '');
+							let sKey = rawKey.replace(/\s+/g, '');
+							if (sAns === sKey && sKey !== '') ok = true;
+						}
+					}
                     else if(kd.tipe === 'pgk' && Array.isArray(ans) && Array.isArray(kunciBenar) && ans.sort().toString() === kunciBenar.sort().toString()) ok = true;
                     else if(kd.tipe === 'bs') {
                         let m = 0, tot = kunciBenar.length;
