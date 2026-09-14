@@ -668,11 +668,12 @@
             if (!document.getElementById('lock-modal').classList.contains('hidden') || !document.getElementById('warning-modal').classList.contains('hidden')) return;
 
             // PENJINAK IOS 1: Abaikan blur jika siswa sedang mengetik (Keyboard Apple muncul/hilang)
-            if (isIOS && document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-                return;
-            }
+				if (isIOS && document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+					return;
+				}
+			});
 
-        const handleFullscreenChange = () => {
+			const handleFullscreenChange = () => {
             if (isSubmitting || document.getElementById('screen-exam').classList.contains('hidden')) return;
             
             const isSupported = document.fullscreenEnabled || document.webkitFullscreenEnabled;
