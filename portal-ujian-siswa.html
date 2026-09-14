@@ -1771,8 +1771,8 @@
             const waitBox = document.getElementById('waiting-box');
             
             resultListener = onSnapshot(doc(db, 'hasil_ujian', rid), s => {
-                if(s.exists()) document.getElementById('final-score').textContent = Math.round(s.data().skor||0);
-            });
+				if(s.exists()) document.getElementById('final-score').textContent = s.data().skor || 0;
+			});
             examListener = onSnapshot(doc(db, 'ujian_terjadwal', eid), s => {
                 if(s.exists()) {
                     const d = s.data();
