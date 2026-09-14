@@ -1270,20 +1270,25 @@
                             if (!soal.type || soal.type === 'pg') {
                                 if (String(jwbSiswa) === String(kunciAsli)) poinSoalSiswa = bobotSoal;
                             } else if (soal.type === 'esai-singkat') {
-                                let rawSiswa = String(jwbSiswa || '').trim().toLowerCase();
-                                let rawKunci = String(kunciAsli || '').trim().toLowerCase();
+								let rawSiswa = String(jwbSiswa || '').trim().toLowerCase();
+								let rawKunci = String(kunciAsli || '').trim().toLowerCase();
 
-                                if (rawKunci.includes(',')) {
-                                    // Mode Cerdas: Cek kemunculan semua kata kunci acak
-                                    let arrKunci = rawKunci.split(',').map(k => k.trim());
-                                    let benarSemua = arrKunci.every(k => rawSiswa.includes(k));
-                                    if (benarSemua) poinSoalSiswa = bobotSoal;
-                                } else {
-                                    // Mode Klasik: Pencocokan persis tanpa spasi
-                                    let safeSiswa = rawSiswa.replace(/\s+/g, '');
-                                    let safeKunci = rawKunci.replace(/\s+/g, '');
-                                    if (safeSiswa === safeKunci) poinSoalSiswa = bobotSoal;
-                                }
+								if (rawKunci.includes(',')) {
+									let arrKunci = rawKunci.split(',').map(k => k.trim()).filter(k => k !== '');
+									let matchCount = 0;
+									arrKunci.forEach(k => {
+										if (rawSiswa.includes(k)) matchCount++;
+									});
+									if (matchCount === arrKunci.length && arrKunci.length > 0) {
+										poinSoalSiswa = bobotSoal;
+									} else if (matchCount > 0) {
+										poinSoalSiswa = (matchCount / arrKunci.length) * bobotSoal;
+									}
+								} else {
+									let safeSiswa = rawSiswa.replace(/\s+/g, '');
+									let safeKunci = rawKunci.replace(/\s+/g, '');
+									if (safeSiswa === safeKunci && safeKunci !== '') poinSoalSiswa = bobotSoal;
+								}
                             } else if (soal.type === 'pgk') {
                                 let arrSiswa = Array.isArray(jwbSiswa) ? jwbSiswa.map(String) : [];
                                 let arrKunci = Array.isArray(kunciAsli) ? kunciAsli.map(String) : [];
