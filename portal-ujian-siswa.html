@@ -664,17 +664,13 @@
         window.addEventListener("blur", () => {
             if (window.isUploading || isSubmitting || document.getElementById('screen-exam').classList.contains('hidden')) return;
             
+            // TAMBAHAN PERBAIKAN: Abaikan event blur jika layar gembok atau peringatan sedang terbuka
+            if (!document.getElementById('lock-modal').classList.contains('hidden') || !document.getElementById('warning-modal').classList.contains('hidden')) return;
+
             // PENJINAK IOS 1: Abaikan blur jika siswa sedang mengetik (Keyboard Apple muncul/hilang)
             if (isIOS && document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
                 return;
             }
-
-            setTimeout(() => {
-                if (!window.isUploading && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-                    triggerWarning("FOKUS HILANG!", "Anda terdeteksi membuka aplikasi melayang atau notifikasi.");
-                }
-            }, isIOS ? 1500 : 500); // Beri toleransi waktu lebih lama untuk Apple
-        });
 
         const handleFullscreenChange = () => {
             if (isSubmitting || document.getElementById('screen-exam').classList.contains('hidden')) return;
@@ -762,12 +758,12 @@
                 const resRef = doc(db, 'hasil_ujian', `${examData.kodeUjian}_${studentData.nis}`);
                 updateDoc(resRef, { pelanggaran: cheatCount }).catch(e=>{});
 
-                // Set waktu ke masa depan (24 jam) agar kebal dari deteksi curang selama alert masih menggantung di layar
+                // Set waktu ke masa depan agar kebal selama alert muncul
                 lastCheatTime = Date.now() + 86400000;
 
                 alert("Gembok terbuka! Kesempatan TERAKHIR. Jangan keluar lagi.");
                 
-                // PERBAIKAN: Mulai hitung cooldown 3 detik tepat SETELAH guru/siswa klik "OK"
+                // PERBAIKAN: Mulai hitung cooldown 3 detik tepat SETELAH guru klik "OK"
                 lastCheatTime = Date.now();
                 document.documentElement.requestFullscreen().catch(e=>{});
             } else {
@@ -1695,27 +1691,38 @@
                             max += bobot;
                             
                             let ok = false;
+							let partialScore = 0;
 							const rawAns = (ans || '').toString().trim().toLowerCase();
 							const rawKey = (kd.kunci || '').toString().trim().toLowerCase();
 
 							if(kd.tipe === 'pg' && ans == kd.kunci) ok = true;
 							else if(kd.tipe === 'esai-singkat') {
 								if (rawKey.includes(',')) {
-									let arrKunci = rawKey.split(',').map(k => k.trim());
-									if (arrKunci.every(k => rawAns.includes(k))) ok = true;
+									let arrKunci = rawKey.split(',').map(k => k.trim()).filter(k => k !== '');
+									let matchCount = 0;
+									arrKunci.forEach(k => {
+										if (rawAns.includes(k)) matchCount++;
+									});
+									if (matchCount === arrKunci.length && arrKunci.length > 0) {
+										ok = true;
+									} else if (matchCount > 0) {
+										partialScore = (matchCount / arrKunci.length) * bobot;
+									}
 								} else {
 									let sAns = rawAns.replace(/\s+/g, '');
 									let sKey = rawKey.replace(/\s+/g, '');
 									if (sAns === sKey && sKey !== '') ok = true;
 								}
 							}
-                            else if(kd.tipe === 'pgk' && Array.isArray(ans) && Array.isArray(kd.kunci) && ans.sort().toString() === kd.kunci.sort().toString()) ok = true;
-                            else if(kd.tipe === 'bs') {
-                                let m = 0, tot = kd.kunci.length;
-                                for(let j=0; j<tot; j++) if(String(ans?.[j]) === String(kd.kunci[j])) m++;
-                                score += (m/tot)*bobot; return;
-                            }
-                            if(ok) score += bobot;
+							else if(kd.tipe === 'pgk' && Array.isArray(ans) && Array.isArray(kd.kunci) && ans.sort().toString() === kd.kunci.sort().toString()) ok = true;
+							else if(kd.tipe === 'bs') {
+								let m = 0, tot = kd.kunci.length;
+								for(let j=0; j<tot; j++) if(String(ans?.[j]) === String(kd.kunci[j])) m++;
+								score += (m/tot)*bobot; return;
+							}
+
+							if(ok) score += bobot;
+							else if(partialScore > 0) score += partialScore;
                         } else max += bobot;
                     });
 
@@ -1788,29 +1795,46 @@
                     const ans = jawabSiswa[i] ? jawabSiswa[i].val : null;
                     
                     let statusJawaban = '<span class="text-red-500 font-bold bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded text-xs">SALAH ✕</span>';
-                    let ok = false;
+					let ok = false;
+					let isPartial = false;
+					let partialText = '';
+
 					const rawAns = (ans || '').toString().trim().toLowerCase();
 					const rawKey = (kunciBenar || '').toString().trim().toLowerCase();
 
 					if(kd.tipe === 'pg' && ans == kunciBenar) ok = true;
 					else if(kd.tipe === 'esai-singkat') {
 						if (rawKey.includes(',')) {
-							let arrKunci = rawKey.split(',').map(k => k.trim());
-							if (arrKunci.every(k => rawAns.includes(k))) ok = true;
+							let arrKunci = rawKey.split(',').map(k => k.trim()).filter(k => k !== '');
+							let matchCount = 0;
+							arrKunci.forEach(k => {
+								if (rawAns.includes(k)) matchCount++;
+							});
+
+							if (matchCount === arrKunci.length && arrKunci.length > 0) {
+								ok = true;
+							} else if (matchCount > 0) {
+								isPartial = true;
+								partialText = `SEBAGIAN ✓ (${matchCount}/${arrKunci.length})`;
+							}
 						} else {
 							let sAns = rawAns.replace(/\s+/g, '');
 							let sKey = rawKey.replace(/\s+/g, '');
 							if (sAns === sKey && sKey !== '') ok = true;
 						}
 					}
-                    else if(kd.tipe === 'pgk' && Array.isArray(ans) && Array.isArray(kunciBenar) && ans.sort().toString() === kunciBenar.sort().toString()) ok = true;
-                    else if(kd.tipe === 'bs') {
-                        let m = 0, tot = kunciBenar.length;
-                        for(let j=0; j<tot; j++) if(String(ans?.[j]) === String(kunciBenar[j])) m++;
-                        if (m === tot) ok = true; 
-                    }
+					else if(kd.tipe === 'pgk' && Array.isArray(ans) && Array.isArray(kunciBenar) && ans.sort().toString() === kunciBenar.sort().toString()) ok = true;
+					else if(kd.tipe === 'bs') {
+						let m = 0, tot = kunciBenar.length;
+						for(let j=0; j<tot; j++) if(String(ans?.[j]) === String(kunciBenar[j])) m++;
+						if (m === tot) ok = true; 
+					}
 
-                    if (ok) statusJawaban = '<span class="text-green-500 font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded text-xs">BENAR ✓</span>';
+					if (ok) {
+						statusJawaban = '<span class="text-green-500 font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded text-xs">BENAR ✓</span>';
+					} else if (isPartial) {
+						statusJawaban = `<span class="text-yellow-600 font-bold bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded text-xs">${partialText}</span>`;
+					}
 
                     let teksJawabSiswa = ans;
                     let teksKunciBenar = kunciBenar;
