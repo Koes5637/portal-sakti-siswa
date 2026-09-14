@@ -1697,33 +1697,53 @@
 							const rawKey = (kd.kunci || '').toString().trim().toLowerCase();
 
 							if(kd.tipe === 'pg' && ans == kd.kunci) ok = true;
-							else if(kd.tipe === 'esai-singkat') {
-								if (rawKey.includes(',')) {
-									let arrKunci = rawKey.split(',').map(k => k.trim()).filter(k => k !== '');
-									let matchCount = 0;
-									arrKunci.forEach(k => {
-										if (rawAns.includes(k)) matchCount++;
-									});
-									if (matchCount === arrKunci.length && arrKunci.length > 0) {
-										ok = true;
-									} else if (matchCount > 0) {
-										partialScore = (matchCount / arrKunci.length) * bobot;
-									}
-								} else {
-									let sAns = rawAns.replace(/\s+/g, '');
-									let sKey = rawKey.replace(/\s+/g, '');
-									if (sAns === sKey && sKey !== '') ok = true;
-								}
-							}
-							else if(kd.tipe === 'pgk' && Array.isArray(ans) && Array.isArray(kd.kunci) && ans.sort().toString() === kd.kunci.sort().toString()) ok = true;
-							else if(kd.tipe === 'bs') {
-								let m = 0, tot = kd.kunci.length;
-								for(let j=0; j<tot; j++) if(String(ans?.[j]) === String(kd.kunci[j])) m++;
-								score += (m/tot)*bobot; return;
-							}
-
-							if(ok) score += bobot;
-							else if(partialScore > 0) score += partialScore;
+                            else if(kd.tipe === 'esai-singkat') {
+                                if (rawKey.includes(',')) {
+                                    let arrKunci = rawKey.split(',').map(k => k.trim()).filter(k => k !== '');
+                                    let matchCount = 0;
+                                    arrKunci.forEach(k => {
+                                        if (rawAns.includes(k)) matchCount++;
+                                    });
+                                    if (matchCount === arrKunci.length && arrKunci.length > 0) ok = true;
+                                    else if (matchCount > 0) partialScore = (matchCount / arrKunci.length) * bobot;
+                                } else {
+                                    let sAns = rawAns.replace(/\s+/g, '');
+                                    let sKey = rawKey.replace(/\s+/g, '');
+                                    if (sAns === sKey && sKey !== '') ok = true;
+                                }
+                            }
+                            else if(kd.tipe === 'pgk') {
+                                let arrSiswa = Array.isArray(ans) ? ans.map(String) : [];
+                                let arrKunci = Array.isArray(kd.kunci) ? kd.kunci.map(String) : [];
+                                const qPublic = questions.find(q => q.id === qId);
+                                let n = qPublic && Array.isArray(qPublic.opsi) ? qPublic.opsi.length : 0;
+                                let JB = arrKunci.length;
+                                
+                                if (JB > 0 && n > 0) {
+                                    let SB = bobot / JB; 
+                                    let SS = SB / -2; 
+                                    let B = 0; let S = 0;
+                                    arrSiswa.forEach(a => { if(arrKunci.includes(a)) B++; else S++; });
+                                    
+                                    if (arrSiswa.length === n) partialScore = 0;
+                                    else { 
+                                        let SA = (B * SB) + (S * SS); 
+                                        partialScore = SA < 0 ? 0 : SA; 
+                                    }
+                                    if (partialScore >= bobot) { ok = true; partialScore = 0; }
+                                }
+                            }
+                            else if(kd.tipe === 'bs') {
+                                let m = 0, tot = kd.kunci.length;
+                                if (tot > 0) {
+                                    for(let j=0; j<tot; j++) if(String(ans?.[j]) === String(kd.kunci[j])) m++;
+                                    partialScore = (m/tot)*bobot;
+                                    if (partialScore >= bobot) { ok = true; partialScore = 0; }
+                                }
+                            }
+                            
+                            if(ok) score += bobot;
+                            else if(partialScore > 0) score += partialScore;
                         } else max += bobot;
                     });
 
@@ -1824,12 +1844,40 @@
 							if (sAns === sKey && sKey !== '') ok = true;
 						}
 					}
-					else if(kd.tipe === 'pgk' && Array.isArray(ans) && Array.isArray(kunciBenar) && ans.sort().toString() === kunciBenar.sort().toString()) ok = true;
-					else if(kd.tipe === 'bs') {
-						let m = 0, tot = kunciBenar.length;
-						for(let j=0; j<tot; j++) if(String(ans?.[j]) === String(kunciBenar[j])) m++;
-						if (m === tot) ok = true; 
-					}
+					else if(kd.tipe === 'pgk') {
+                        let arrSiswa = Array.isArray(ans) ? ans.map(String) : [];
+                        let arrKunci = Array.isArray(kunciBenar) ? kunciBenar.map(String) : [];
+                        let n = Array.isArray(q.opsi) ? q.opsi.length : 0;
+                        let JB = arrKunci.length;
+                        
+                        if (JB > 0 && n > 0) {
+                            let B = 0; let S = 0;
+                            arrSiswa.forEach(a => { if(arrKunci.includes(a)) B++; else S++; });
+                            if (arrSiswa.length === n) {
+                                // Anulir jika dicentang semua
+                            } else if (B === JB && S === 0) {
+                                ok = true;
+                            } else if (B > 0) {
+                                isPartial = true;
+                                partialText = `SEBAGIAN ✓ (${B} Benar, ${S} Salah)`;
+                            }
+                        }
+                    }
+                    else if(kd.tipe === 'bs') {
+                        let kArr = Array.isArray(kunciBenar) ? kunciBenar : [];
+                        let matchCount = 0;
+                        if (kArr.length > 0) {
+                            kArr.forEach((k, kIdx) => {
+                                let sBS = ans && ans[kIdx] !== undefined ? String(ans[kIdx]).toLowerCase() : "null";
+                                if (sBS === String(k).toLowerCase()) matchCount++;
+                            });
+                            if (matchCount === kArr.length) ok = true;
+                            else if (matchCount > 0) {
+                                isPartial = true;
+                                partialText = `SEBAGIAN ✓ (${matchCount}/${kArr.length})`;
+                            }
+                        }
+                    }
 
 					if (ok) {
 						statusJawaban = '<span class="text-green-500 font-bold bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded text-xs">BENAR ✓</span>';
