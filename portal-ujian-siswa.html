@@ -1362,14 +1362,23 @@
                         </div>`;
                 } else if (q.type === 'esai-kompleks') {
                     opsiHtml += `<textarea oninput="window.saveAns(${i}, this.value, false, 'esai-kompleks')" class="glow-input w-full p-5 rounded-2xl h-40 text-base leading-relaxed bg-white dark:bg-slate-800/50 text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 outline-none focus:ring-2 ring-primary custom-scrollbar" placeholder="Ketik jawaban panjang di sini...">${savedVal || ''}</textarea>`;
+                    
+                    // Merender rentetan foto (jika ada lebih dari satu)
+                    let imgHtml = '';
+                    if (ans.images && Array.isArray(ans.images) && ans.images.length > 0) {
+                        ans.images.forEach((imgBase64, imgIdx) => {
+                            imgHtml += `<div class="relative inline-block group mr-3 mb-3"><img src="${imgBase64}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="window.delImg(${i}, ${imgIdx})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>`;
+                        });
+                    }
+
                     opsiHtml += `
                         <div class="mt-6 pt-6 border-t border-slate-200 dark:border-white/10">
                             <label for="cam-${i}" class="cursor-pointer px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white text-sm font-bold flex items-center gap-2 w-max transition-all shadow-lg" onclick="window.setUploading(true);">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg> Foto Jawaban
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg> Tambah Foto Lembar Jawaban
                             </label>
                             <input type="file" id="cam-${i}" accept="image/*" class="hidden" capture="environment" onchange="window.handleImageUpload(event, ${i})">
-                            <div id="preview-${i}" class="${ans.image ? 'mt-4' : 'mt-4 hidden'}">
-                                ${ans.image ? `<div class="relative inline-block group"><img src="${ans.image}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="window.delImg(${i})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>` : ''}
+                            <div id="preview-${i}" class="mt-4 flex flex-wrap">
+                                ${imgHtml}
                             </div>
                         </div>`;
                 }
@@ -1487,21 +1496,42 @@
                 window.setUploading(true);
                 const base64 = await new Promise(r=>{ const fr=new FileReader(); fr.onload=x=>r(x.target.result); fr.readAsDataURL(e.target.files[0]); });
                 const comp = await compressImage(base64);
-                answers[idx].image = comp;
+                
+                if (!answers[idx].images) answers[idx].images = [];
+                answers[idx].images.push(comp);
+                
                 persist();
-                document.getElementById(`preview-${idx}`).innerHTML = `<div class="relative inline-block group"><img src="${comp}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="window.delImg(${idx})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>`;
-                document.getElementById(`preview-${idx}`).classList.remove('hidden');
+                
+                let imgHtml = '';
+                answers[idx].images.forEach((imgBase64, imgIdx) => {
+                    imgHtml += `<div class="relative inline-block group mr-3 mb-3"><img src="${imgBase64}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="window.delImg(${idx}, ${imgIdx})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>`;
+                });
+                
+                const previewEl = document.getElementById(`preview-${idx}`);
+                previewEl.innerHTML = imgHtml;
+                previewEl.classList.remove('hidden');
+                
+                // Pastikan status upload dikembalikan ke false setelah selesai merender
+                setTimeout(() => window.setUploading(false), 500);
             } else {
                 window.setUploading(false);
             }
         };
 
-        window.delImg = (idx) => { 
-            delete answers[idx].image; 
+        window.delImg = (idx, imgIdx) => { 
+            if (answers[idx].images && answers[idx].images.length > imgIdx) {
+                answers[idx].images.splice(imgIdx, 1);
+            }
             persist(); 
+            
+            let imgHtml = '';
+            answers[idx].images.forEach((imgBase64, imgIdx) => {
+                imgHtml += `<div class="relative inline-block group mr-3 mb-3"><img src="${imgBase64}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="window.delImg(${idx}, ${imgIdx})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>`;
+            });
+            
             const p = document.getElementById(`preview-${idx}`);
-            p.innerHTML = '';
-            p.classList.add('hidden');
+            p.innerHTML = imgHtml;
+            if (answers[idx].images.length === 0) p.classList.add('hidden');
         };
 
         function persist() {
@@ -1608,7 +1638,7 @@
                     const b = document.getElementById(p + i);
                     if(b) {
                         const a = answers[i];
-                        const has = (a.val !== null && a.val !== undefined && a.val !== '' && (typeof a.val !== 'object' || Object.keys(a.val).length > 0)) || (a.image && a.image.length > 0);
+                        const has = (a.val !== null && a.val !== undefined && a.val !== '' && (typeof a.val !== 'object' || Object.keys(a.val).length > 0)) || (a.image && a.image.length > 0) || (a.images && a.images.length > 0);
                         b.className = "nav-grid-btn w-full aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all " + 
                             (i === currentIndex ? 'active' : (a.ragu ? 'flag' : (has ? 'done' : '')));
                     }
@@ -1628,7 +1658,7 @@
         }
 
         window.showSummary = () => {
-            const done = answers.filter(a => (a.val !== null && a.val !== undefined && a.val !== '' && (typeof a.val !== 'object' || Object.keys(a.val).length > 0)) || (a.image && a.image.length > 0)).length;
+            const done = answers.filter(a => (a.val !== null && a.val !== undefined && a.val !== '' && (typeof a.val !== 'object' || Object.keys(a.val).length > 0)) || (a.image && a.image.length > 0) || (a.images && a.images.length > 0)).length;
             document.getElementById('sum-answered').textContent = done;
             document.getElementById('sum-ragu').textContent = answers.filter(a=>a.ragu).length;
             document.getElementById('sum-empty').textContent = questions.length - done;
@@ -1637,7 +1667,7 @@
             questions.forEach((_, i) => {
                 const b = document.createElement('button'); b.textContent = i+1;
                 const a = answers[i];
-                const has = (a.val !== null && a.val !== undefined && a.val !== '' && (typeof a.val !== 'object' || Object.keys(a.val).length > 0)) || (a.image && a.image.length > 0);
+                const has = (a.val !== null && a.val !== undefined && a.val !== '' && (typeof a.val !== 'object' || Object.keys(a.val).length > 0)) || (a.image && a.image.length > 0) || (a.images && a.images.length > 0);
                 b.className = `w-full aspect-square rounded-xl flex items-center justify-center text-xs font-bold text-slate-800 dark:text-white transition-all ${a.ragu ? 'bg-warning text-black' : (has ? 'bg-success text-white' : 'bg-slate-200 dark:bg-slate-700')}`;
                 b.onclick = () => { closeSummary(); loadQuestion(i); };
                 g.appendChild(b);
