@@ -120,6 +120,9 @@
         .nav-grid-btn.flag { border-color: #fbbf24; color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
         html.dark .nav-grid-btn.flag { border-color: #fbbf24; color: #fbbf24; background: rgba(251, 191, 36, 0.15); }
     </style>
+	<!-- Pustaka Cropper.js untuk Potong Foto Jawaban -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
 <body class="flex flex-col min-h-screen font-sans bg-slate-50 text-slate-800 dark:bg-[#0f172a] dark:text-[#f8fafc] transition-colors duration-500" oncontextmenu="return false;" onkeydown="return preventCheating(event)">
     <div class="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -520,6 +523,27 @@
             </div>
             <div id="pembahasan-content" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar text-left">
                 </div>
+        </div>
+    </div>
+	<!-- MODAL PEMOTONG GAMBAR -->
+    <div id="crop-modal" class="fixed inset-0 bg-black/95 z-[10010] hidden flex-col items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div class="glass-panel w-full max-w-3xl bg-slate-900 rounded-3xl overflow-hidden flex flex-col h-[85vh] shadow-2xl border border-white/10 relative">
+            <!-- Header -->
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
+                <h3 class="text-white font-bold text-sm uppercase tracking-wider flex items-center gap-2">✂️ Potong Area Jawaban</h3>
+                <button onclick="window.tutupCropModal()" class="text-slate-400 hover:text-red-500 font-bold text-xl px-2 transition-colors">✕</button>
+            </div>
+            <!-- Area Kanvas -->
+            <div class="flex-1 w-full relative overflow-hidden bg-black flex items-center justify-center">
+                <img id="image-to-crop" class="max-w-full max-h-full hidden" src="" alt="Area Potong">
+            </div>
+            <!-- Footer/Tombol -->
+            <div class="p-4 border-t border-slate-700 bg-slate-800 flex justify-end gap-3">
+                <button onclick="window.tutupCropModal()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm font-bold transition-colors">Batal</button>
+                <button onclick="window.simpanHasilCrop()" class="px-6 py-2.5 bg-gradient-to-r from-primary to-accent hover:to-indigo-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg transform hover:scale-[1.02] flex items-center gap-2">
+                    ✅ Simpan Potongan
+                </button>
+            </div>
         </div>
     </div>
     <script type="module">
@@ -1491,31 +1515,109 @@
             updateNavStyle();
         };
 
-        window.handleImageUpload = async (e, idx) => {
-            if(e.target.files[0]) {
-                window.setUploading(true);
-                const base64 = await new Promise(r=>{ const fr=new FileReader(); fr.onload=x=>r(x.target.result); fr.readAsDataURL(e.target.files[0]); });
-                const comp = await compressImage(base64);
+        // --- SISTEM PEMOTONG GAMBAR (CROPPER) ---
+        let cropperInstansi = null;
+        let cropTargetIdx = null;
+
+        window.handleImageUpload = (e, idx) => {
+            if(e.target.files && e.target.files[0]) {
+                window.setUploading(true); // Jeda sistem anti-cheat agar tidak dianggap melanggar
+                cropTargetIdx = idx;
                 
-                if (!answers[idx].images) answers[idx].images = [];
-                answers[idx].images.push(comp);
+                const file = e.target.files[0];
+                if (!file.type.startsWith('image/')) {
+                    alert('Hanya file gambar yang diperbolehkan.');
+                    window.setUploading(false);
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const imgElement = document.getElementById('image-to-crop');
+                    imgElement.src = event.target.result;
+                    imgElement.classList.remove('hidden');
+                    
+                    document.getElementById('crop-modal').classList.remove('hidden');
+                    document.getElementById('crop-modal').classList.add('flex');
+                    
+                    if (cropperInstansi) cropperInstansi.destroy();
+                    
+                    cropperInstansi = new Cropper(imgElement, {
+                        viewMode: 1, // Mencegah batas crop keluar dari gambar
+                        dragMode: 'move', // Menggeser gambar dengan jari (cocok untuk HP)
+                        autoCropArea: 0.9,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                    });
+                };
+                reader.readAsDataURL(file);
                 
-                persist();
-                
-                let imgHtml = '';
-                answers[idx].images.forEach((imgBase64, imgIdx) => {
-                    imgHtml += `<div class="relative inline-block group mr-3 mb-3"><img src="${imgBase64}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="window.delImg(${idx}, ${imgIdx})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>`;
-                });
-                
-                const previewEl = document.getElementById(`preview-${idx}`);
-                previewEl.innerHTML = imgHtml;
-                previewEl.classList.remove('hidden');
-                
-                // Pastikan status upload dikembalikan ke false setelah selesai merender
-                setTimeout(() => window.setUploading(false), 500);
+                e.target.value = ''; // Kosongkan input agar gambar yang sama bisa dipilih lagi jika dibatalkan
             } else {
                 window.setUploading(false);
             }
+        };
+
+        window.simpanHasilCrop = async () => {
+            if (!cropperInstansi || cropTargetIdx === null) return;
+            
+            // 1. Ambil kanvas hasil crop
+            const canvasPotongan = cropperInstansi.getCroppedCanvas({
+                maxWidth: 1200,
+                maxHeight: 1200,
+                fillColor: '#fff', // Latar putih
+            });
+            
+            if (!canvasPotongan) {
+                alert("Gagal memotong gambar. Silakan coba lagi.");
+                return;
+            }
+
+            // 2. Ubah ke format Base64 dan kompresi
+            const base64Potongan = canvasPotongan.toDataURL('image/jpeg', 0.8);
+            const comp = await compressImage(base64Potongan);
+            
+            // 3. Simpan ke array jawaban
+            const idx = cropTargetIdx;
+            if (!answers[idx].images) answers[idx].images = [];
+            answers[idx].images.push(comp);
+            persist();
+            
+            // 4. Perbarui pratinjau foto di layar ujian
+            let imgHtml = '';
+            answers[idx].images.forEach((imgBase64, imgIdx) => {
+                imgHtml += `<div class="relative inline-block group mr-3 mb-3"><img src="${imgBase64}" class="h-40 rounded-xl border border-slate-300 dark:border-white/20 shadow-lg"><button onclick="window.delImg(${idx}, ${imgIdx})" class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-md"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>`;
+            });
+            
+            const previewEl = document.getElementById(`preview-${idx}`);
+            if (previewEl) {
+                previewEl.innerHTML = imgHtml;
+                previewEl.classList.remove('hidden');
+            }
+            
+            window.tutupCropModal();
+        };
+
+        window.tutupCropModal = () => {
+            document.getElementById('crop-modal').classList.add('hidden');
+            document.getElementById('crop-modal').classList.remove('flex');
+            
+            if (cropperInstansi) {
+                cropperInstansi.destroy();
+                cropperInstansi = null;
+            }
+            
+            const imgElement = document.getElementById('image-to-crop');
+            imgElement.src = '';
+            imgElement.classList.add('hidden');
+            
+            cropTargetIdx = null;
+            setTimeout(() => window.setUploading(false), 500); // Aktifkan kembali anti-cheat
         };
 
         window.delImg = (idx, imgIdx) => { 
