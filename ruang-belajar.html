@@ -26,6 +26,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script>MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };</script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
 
     <style>
         ::-webkit-scrollbar { width: 8px; }
@@ -370,6 +371,7 @@
         };
 
         let db = null;
+        let storage = null; // TAMBAHAN UNTUK STORAGE
         let dataSiswa = null;
         let semuaModul = []; 
         let kategoriAktif = "KBM_Harian";
@@ -409,6 +411,7 @@
                 
                 await schoolApp.auth().signInAnonymously();
                 db = schoolApp.firestore();
+				storage = schoolApp.storage();
 
                 const docSiswa = await db.collection('siswa').doc(nis).get();
                 if(!docSiswa.exists) throw new Error("Data siswa tidak ditemukan.");
@@ -908,13 +911,14 @@
 
         window.siapkanTampilanTugas = async function() {
             const panelKendali = document.getElementById('panel-kendali-layar');
+            const isTugasBebas = (modulAktif.tipe_pengerjaan === 'BEBAS');
 
             if (modulAktif.kategori !== 'KBM_Harian') {
                 ubahModeLayar('soal'); 
                 panelKendali.classList.remove('md:flex');
                 panelKendali.classList.add('hidden');
                 
-                if (!modulAktif.sudahDiacak) {
+                if (!isTugasBebas && !modulAktif.sudahDiacak) {
                     let blokSoal = [];
                     let grupMap = {};
 
@@ -946,7 +950,6 @@
                             }
                         }
                     });
-                    
                     modulAktif.sudahDiacak = true;
                 }
             } else {
@@ -958,7 +961,6 @@
             document.getElementById('footer-tugas').classList.remove('hidden');
             document.getElementById('header-panel-kiri').classList.remove('hidden');
             
-            // Tampilkan timer HANYA jika durasi menit diisi lebih dari 0
             if (modulAktif.durasi_menit && modulAktif.durasi_menit > 0) {
                 document.getElementById('wadah-timer').classList.remove('hidden');
             } else {
@@ -994,8 +996,86 @@
             }
             
             document.getElementById('simulasi-wacana').innerHTML = kontenKiri;
-            indeksSoalAktif = 0;
-            renderSoalAktif();
+            
+            if (isTugasBebas) {
+                renderSoalBebas();
+            } else {
+                indeksSoalAktif = 0;
+                renderSoalAktif();
+            }
+        };
+
+        window.renderSoalBebas = function() {
+            const divNomorSoal = document.getElementById('nomor-soal');
+            if(divNomorSoal) divNomorSoal.parentElement.style.display = 'none';
+            
+            document.getElementById('tipe-soal-badge').innerText = 'Instruksi Tugas';
+            document.getElementById('simulasi-pertanyaan').innerHTML = `
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-500 p-4 rounded-r-lg mb-6">
+                    <h3 class="font-bold text-indigo-800 dark:text-indigo-300 text-sm uppercase tracking-wider mb-2">Instruksi Guru:</h3>
+                    <div class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">${modulAktif.materi_html || 'Kerjakan tugas sesuai arahan.'}</div>
+                </div>
+            `;
+            
+            const jawabanTersimpan = jawabanSiswa['tugas_bebas'] || "";
+            const fileTersimpan = jawabanSiswa['file_bebas'] || "";
+            
+            let filePreview = '';
+            if (fileTersimpan) {
+                filePreview = `<div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-xs font-bold flex items-center gap-2"><i class="ph ph-check-circle text-lg"></i> File/Foto jawaban sudah terlampir.</div>`;
+            }
+
+            document.getElementById('simulasi-opsi').innerHTML = `
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">1. Ketik Jawaban Anda (Opsional):</label>
+                <textarea onchange="jawabanSiswa['tugas_bebas'] = this.value" class="w-full h-40 p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-inner text-sm leading-relaxed text-slate-800 dark:text-slate-200 mb-4" placeholder="Ketik rangkuman atau jawaban tugas Anda di sini...">${jawabanTersimpan}</textarea>
+                
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">2. Unggah Foto/File Jawaban (Opsional):</label>
+                <div class="flex flex-col gap-2 bg-indigo-50 dark:bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-slate-600">
+                    <input type="file" id="upload-tugas-siswa" accept="image/*,application/pdf" capture="environment" class="block w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer shadow-sm transition-colors" onchange="uploadFileSiswa(this)">
+                    ${filePreview}
+                    <div id="progress-upload-siswa" class="hidden text-xs font-bold text-indigo-600 mt-2 animate-pulse">Mengunggah file... Mohon tunggu.</div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2 italic">*Anda bisa mengetik jawaban, mengunggah foto kertas jawaban, atau keduanya. Jangan lupa klik Kumpulkan jika sudah selesai.</p>
+            `;
+
+            const btnBerikutnya = document.getElementById('btn-berikutnya');
+            btnBerikutnya.classList.replace('bg-puspendik-blue', 'bg-green-600');
+            btnBerikutnya.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
+            document.getElementById('teks-btn-berikutnya').innerText = "Kumpulkan"; 
+            document.getElementById('ikon-btn-berikutnya').className = "ph ph-check-circle text-lg";
+            btnBerikutnya.onclick = () => kumpulkanTugas(false);
+            
+            const kontrolTengah = document.querySelector('#footer-tugas .flex.items-center.gap-2.md\\:gap-4');
+            const btnSebelumnya = document.querySelector('#footer-tugas > button:first-child');
+            if (kontrolTengah) kontrolTengah.style.display = 'none';
+            if (btnSebelumnya) btnSebelumnya.style.display = 'none';
+        };
+
+        window.uploadFileSiswa = async function(inputEl) {
+            if (!inputEl.files || inputEl.files.length === 0) return;
+            const file = inputEl.files[0];
+            const progressEl = document.getElementById('progress-upload-siswa');
+            progressEl.classList.remove('hidden');
+            inputEl.disabled = true;
+
+            try {
+                const namaFileAman = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+                const path = 'jawaban_siswa/' + dataSiswa.nis + '_' + Date.now() + '_' + namaFileAman;
+                const storageRef = storage.ref().child(path);
+                
+                await storageRef.put(file);
+                const downloadUrl = await storageRef.getDownloadURL();
+                
+                jawabanSiswa['file_bebas'] = downloadUrl;
+                progressEl.classList.add('hidden');
+                inputEl.disabled = false;
+                alert("File/Foto berhasil diunggah dan tersimpan sementara. Jangan lupa klik tombol Kumpulkan di bawah!");
+            } catch (e) {
+                console.error(e);
+                alert("Gagal mengunggah file. Pastikan koneksi internet stabil.");
+                progressEl.classList.add('hidden');
+                inputEl.disabled = false;
+            }
         };
 
         window.simpanJawabanSpesifik = function(idxAsli, val, type, subIdx = null) {
@@ -1233,11 +1313,19 @@
         }
 
         window.kumpulkanTugas = async function(isAutoSubmit) {
-            if(!isAutoSubmit) {
+            const isTugasBebas = (modulAktif.tipe_pengerjaan === 'BEBAS');
+
+            if(!isAutoSubmit && !isTugasBebas) {
                 const sisaKosong = modulAktif.soal_latihan.length - Object.keys(jawabanSiswa).length;
                 let pesan = "Yakin ingin mengumpulkan tugas sekarang?";
                 if(sisaKosong > 0) pesan = `Ada ${sisaKosong} soal yang BELUM DIJAWAB! ${pesan}`;
                 if(!confirm(pesan)) return;
+            } else if (!isAutoSubmit && isTugasBebas) {
+                if(!jawabanSiswa['tugas_bebas'] && !jawabanSiswa['file_bebas']) {
+                    if(!confirm("Anda belum mengetik atau mengunggah file apa pun. Yakin ingin mengumpulkan tugas kosong?")) return;
+                } else {
+                    if(!confirm("Yakin ingin mengumpulkan lembar tugas ini sekarang?")) return;
+                }
             }
 
             clearInterval(timerInterval);
@@ -1246,97 +1334,114 @@
             try {
                 let totalSkorDidapat = 0;
                 let totalBobotMaksimal = 0;
-                const totalSoal = modulAktif.soal_latihan.length;
+                const totalSoal = isTugasBebas ? 1 : modulAktif.soal_latihan.length;
                 const jawabanDetailArray = [];
                 const manualScores = {};
                 let hitungBenar = 0;
+                let nilaiAkhir = 0;
 
-                for (let i = 0; i < totalSoal; i++) {
-                    const soal = modulAktif.soal_latihan[i];
-                    const idSoal = soal.id;
-                    const jwbSiswa = jawabanSiswa[i] || null;
-                    
-                    const bobotSoal = parseFloat(soal.skor) || 1; 
-                    totalBobotMaksimal += bobotSoal;
-                    jawabanDetailArray.push({ id: idSoal, answer: jwbSiswa });
+                if (!isTugasBebas) {
+                    for (let i = 0; i < totalSoal; i++) {
+                        const soal = modulAktif.soal_latihan[i];
+                        const idSoal = soal.id;
+                        const jwbSiswa = jawabanSiswa[i] || null;
+                        
+                        const bobotSoal = parseFloat(soal.skor) || 1; 
+                        totalBobotMaksimal += bobotSoal;
+                        jawabanDetailArray.push({ id: idSoal, answer: jwbSiswa });
 
-                    try {
-                        const snapKunci = await db.collection('bank_soal_privat').doc(idSoal).get();
-                        if (snapKunci.exists) {
-                            const dataKunci = snapKunci.data();
-                            const kunciAsli = dataKunci.kunci;
-                            let poinSoalSiswa = 0;
+                        try {
+                            const snapKunci = await db.collection('bank_soal_privat').doc(idSoal).get();
+                            if (snapKunci.exists) {
+                                const dataKunci = snapKunci.data();
+                                const kunciAsli = dataKunci.kunci;
+                                let poinSoalSiswa = 0;
 
-                            if (!soal.type || soal.type === 'pg') {
-                                if (String(jwbSiswa) === String(kunciAsli)) poinSoalSiswa = bobotSoal;
-                            } else if (soal.type === 'esai-singkat') {
-								let rawSiswa = String(jwbSiswa || '').trim().toLowerCase();
-								let rawKunci = String(kunciAsli || '').trim().toLowerCase();
+                                if (!soal.type || soal.type === 'pg') {
+                                    if (String(jwbSiswa) === String(kunciAsli)) poinSoalSiswa = bobotSoal;
+                                } else if (soal.type === 'esai-singkat') {
+                                    let rawSiswa = String(jwbSiswa || '').trim().toLowerCase();
+                                    let rawKunci = String(kunciAsli || '').trim().toLowerCase();
 
-								if (rawKunci.includes(',')) {
-									let arrKunci = rawKunci.split(',').map(k => k.trim()).filter(k => k !== '');
-									let matchCount = 0;
-									arrKunci.forEach(k => {
-										if (rawSiswa.includes(k)) matchCount++;
-									});
-									if (matchCount === arrKunci.length && arrKunci.length > 0) {
-										poinSoalSiswa = bobotSoal;
-									} else if (matchCount > 0) {
-										poinSoalSiswa = (matchCount / arrKunci.length) * bobotSoal;
-									}
-								} else {
-									let safeSiswa = rawSiswa.replace(/\s+/g, '');
-									let safeKunci = rawKunci.replace(/\s+/g, '');
-									if (safeSiswa === safeKunci && safeKunci !== '') poinSoalSiswa = bobotSoal;
-								}
-                            } else if (soal.type === 'pgk') {
-                                let arrSiswa = Array.isArray(jwbSiswa) ? jwbSiswa.map(String) : [];
-                                let arrKunci = Array.isArray(kunciAsli) ? kunciAsli.map(String) : [];
-                                let n = Array.isArray(soal.opsi) ? soal.opsi.length : 0;
-                                let jumlahKunci = arrKunci.length;
+                                    if (rawKunci.includes(',')) {
+                                        let arrKunci = rawKunci.split(',').map(k => k.trim()).filter(k => k !== '');
+                                        let matchCount = 0;
+                                        arrKunci.forEach(k => {
+                                            if (rawSiswa.includes(k)) matchCount++;
+                                        });
+                                        if (matchCount === arrKunci.length && arrKunci.length > 0) {
+                                            poinSoalSiswa = bobotSoal;
+                                        } else if (matchCount > 0) {
+                                            poinSoalSiswa = (matchCount / arrKunci.length) * bobotSoal;
+                                        }
+                                    } else {
+                                        let safeSiswa = rawSiswa.replace(/\s+/g, '');
+                                        let safeKunci = rawKunci.replace(/\s+/g, '');
+                                        if (safeSiswa === safeKunci && safeKunci !== '') poinSoalSiswa = bobotSoal;
+                                    }
+                                } else if (soal.type === 'pgk') {
+                                    let arrSiswa = Array.isArray(jwbSiswa) ? jwbSiswa.map(String) : [];
+                                    let arrKunci = Array.isArray(kunciAsli) ? kunciAsli.map(String) : [];
+                                    let n = Array.isArray(soal.opsi) ? soal.opsi.length : 0;
+                                    let jumlahKunci = arrKunci.length;
 
-                                if (jumlahKunci > 0 && n > 0) {
-                                    let skorBenar = bobotSoal / jumlahKunci;
-                                    let skorSalah = skorBenar / -2;
-                                    let B = 0; let S = 0;
-                                    arrSiswa.forEach(ans => { if (arrKunci.includes(ans)) B++; else S++; });
-                                    if (arrSiswa.length === n) poinSoalSiswa = 0;
-                                    else {
-                                        let skorSementara = (B * skorBenar) + (S * skorSalah);
-                                        poinSoalSiswa = skorSementara < 0 ? 0 : skorSementara;
+                                    if (jumlahKunci > 0 && n > 0) {
+                                        let skorBenar = bobotSoal / jumlahKunci;
+                                        let skorSalah = skorBenar / -2;
+                                        let B = 0; let S = 0;
+                                        arrSiswa.forEach(ans => { if (arrKunci.includes(ans)) B++; else S++; });
+                                        if (arrSiswa.length === n) poinSoalSiswa = 0;
+                                        else {
+                                            let skorSementara = (B * skorBenar) + (S * skorSalah);
+                                            poinSoalSiswa = skorSementara < 0 ? 0 : skorSementara;
+                                        }
+                                    }
+                                } else if (soal.type === 'bs') {
+                                    let kArr = Array.isArray(kunciAsli) ? kunciAsli : [];
+                                    let matchCount = 0;
+                                    if (kArr.length > 0) {
+                                        kArr.forEach((k, kIdx) => {
+                                            let sBS = jwbSiswa && jwbSiswa[kIdx] !== undefined ? String(jwbSiswa[kIdx]).toLowerCase() : "null";
+                                            let kBS = String(k).toLowerCase();
+                                            if (sBS === kBS) matchCount++;
+                                        });
+                                        poinSoalSiswa = (matchCount / kArr.length) * bobotSoal;
                                     }
                                 }
-                            } else if (soal.type === 'bs') {
-                                let kArr = Array.isArray(kunciAsli) ? kunciAsli : [];
-                                let matchCount = 0;
-                                if (kArr.length > 0) {
-                                    kArr.forEach((k, kIdx) => {
-                                        let sBS = jwbSiswa && jwbSiswa[kIdx] !== undefined ? String(jwbSiswa[kIdx]).toLowerCase() : "null";
-                                        let kBS = String(k).toLowerCase();
-                                        if (sBS === kBS) matchCount++;
-                                    });
-                                    poinSoalSiswa = (matchCount / kArr.length) * bobotSoal;
-                                }
-                            }
 
-                            totalSkorDidapat += poinSoalSiswa;
-                            manualScores[idSoal] = poinSoalSiswa;
-                            if (poinSoalSiswa >= bobotSoal) hitungBenar++; 
-                        }
-                    } catch (errKunci) { manualScores[idSoal] = 0; }
+                                totalSkorDidapat += poinSoalSiswa;
+                                manualScores[idSoal] = poinSoalSiswa;
+                                if (poinSoalSiswa >= bobotSoal) hitungBenar++; 
+                            }
+                        } catch (errKunci) { manualScores[idSoal] = 0; }
+                    }
+                    nilaiAkhir = totalBobotMaksimal > 0 ? parseFloat(((totalSkorDidapat / totalBobotMaksimal) * 100).toFixed(2)) : 0;
+                } else {
+                    nilaiAkhir = 0; 
+                    let teksKumpul = jawabanSiswa['tugas_bebas'] || "";
+                    if (jawabanSiswa['file_bebas']) {
+                        teksKumpul += `\n\n[FILE LAMPIRAN SISWA]: ${jawabanSiswa['file_bebas']}`;
+                    }
+                    jawabanDetailArray.push({ id: 'tugas_bebas', answer: teksKumpul });
                 }
 
-                // Menghitung presisi desimal (contoh: 3.33) tanpa pembulatan kasar
-                const nilaiAkhir = totalBobotMaksimal > 0 ? parseFloat(((totalSkorDidapat / totalBobotMaksimal) * 100).toFixed(2)) : 0;
                 const nisValid = dataSiswa.nis || localStorage.getItem('student_nis');
                 const namaValid = dataSiswa.nama || "Nama Siswa";
                 const kelasValid = dataSiswa.kelas || "Umum";
                 const docId = `${nisValid}_${modulAktif.id}`;
 
+                let teksKumpulFinal = isTugasBebas ? (jawabanSiswa['tugas_bebas'] || "") : "";
+                if (isTugasBebas && jawabanSiswa['file_bebas']) {
+                    teksKumpulFinal += `\n\n[FILE LAMPIRAN SISWA]: ${jawabanSiswa['file_bebas']}`;
+                }
+
                 const payloadProgres = {
-                    status_tugas: "Selesai", waktu_kumpul: new Date().toISOString(),
-                    jawaban_siswa: jawabanSiswa, nilai_akhir: nilaiAkhir,
-                    jumlah_benar: hitungBenar, total_soal: totalSoal
+                    status_tugas: "Selesai", 
+                    waktu_kumpul: new Date().toISOString(),
+                    jawaban_siswa: isTugasBebas ? [teksKumpulFinal] : jawabanSiswa, 
+                    nilai_akhir: nilaiAkhir,
+                    jumlah_benar: hitungBenar, 
+                    total_soal: totalSoal
                 };
                 
                 const payloadHasilUjian = {
@@ -1354,18 +1459,25 @@
                 if(typeof progresSiswa !== 'undefined') progresSiswa[modulAktif.id] = payloadProgres;
                 
                 if (modulAktif.kategori === 'KBM_Harian') {
-                    alert(`🎉 TUGAS SELESAI!\n\nNama: ${namaValid}\nNilai Anda: ${nilaiAkhir}`);
+                    if (isTugasBebas) {
+                        alert(`🎉 TUGAS SELESAI!\n\nNama: ${namaValid}\nJawaban Anda sudah masuk dan menunggu penilaian manual dari Guru.`);
+                    } else {
+                        alert(`🎉 TUGAS SELESAI!\n\nNama: ${namaValid}\nNilai Anda: ${nilaiAkhir}`);
+                    }
                 } else {
                     alert(`✅ UJIAN SELESAI!\n\nJawaban simulasi Anda telah terekam di sistem dengan aman.`);
                 }
                 
-                // --- PENUTUPAN PAKSA TANPA KONFIRMASI (BUG FIX) ---
+                const kontrolTengah = document.querySelector('#footer-tugas .flex.items-center.gap-2.md\\:gap-4');
+                const btnSebelumnya = document.querySelector('#footer-tugas > button:first-child');
+                if (kontrolTengah) kontrolTengah.style.display = '';
+                if (btnSebelumnya) btnSebelumnya.style.display = '';
+
                 if(document.fullscreenElement) document.exitFullscreen();
                 document.getElementById('view-simulasi').classList.add('hidden');
                 document.getElementById('view-simulasi').classList.remove('flex');
                 document.getElementById('view-etalase').classList.remove('hidden');
                 modulAktif = null;
-                // --------------------------------------------------
 
                 if(typeof renderModul === 'function') renderModul();
                 
