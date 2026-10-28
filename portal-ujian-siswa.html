@@ -682,20 +682,30 @@
 
         document.addEventListener("visibilitychange", () => {
             if (window.isUploading || isSubmitting || document.getElementById('screen-exam').classList.contains('hidden')) return;
-            if (document.hidden) triggerWarning("GANTI TAB / MINIMIZE!", "Anda terdeteksi meninggalkan halaman ujian.");
+            
+            if (document.hidden) {
+                triggerWarning("GANTI TAB / MINIMIZE!", "Anda terdeteksi meninggalkan halaman ujian.");
+            } else {
+                // PERBAIKAN 1: Paksa kirim ulang data curang ke Guru saat layar HP menyala kembali
+                if (examData && studentData && cheatCount > 0) {
+                    const resRef = doc(db, 'hasil_ujian', `${examData.kodeUjian}_${studentData.nis}`);
+                    updateDoc(resRef, { pelanggaran: cheatCount }).catch(e=>{});
+                }
+            }
         });
 
         window.addEventListener("blur", () => {
             if (window.isUploading || isSubmitting || document.getElementById('screen-exam').classList.contains('hidden')) return;
             
-            // TAMBAHAN PERBAIKAN: Abaikan event blur jika layar gembok atau peringatan sedang terbuka
             if (!document.getElementById('lock-modal').classList.contains('hidden') || !document.getElementById('warning-modal').classList.contains('hidden')) return;
 
-            // PENJINAK IOS 1: Abaikan blur jika siswa sedang mengetik (Keyboard Apple muncul/hilang)
-				if (isIOS && document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-					return;
-				}
-			});
+            if (isIOS && document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                return;
+            }
+            
+            // PERBAIKAN 2: Baris hukuman yang sebelumnya tidak sengaja terhapus
+            triggerWarning("LAYAR TIDAK FOKUS", "Anda terdeteksi berpindah aplikasi atau membuka notifikasi.");
+        });
 
 			const handleFullscreenChange = () => {
             if (isSubmitting || document.getElementById('screen-exam').classList.contains('hidden')) return;
@@ -1071,7 +1081,14 @@
                         showLoading(false);
                         return;
                     }
-                    cheatCount = rData.pelanggaran || 0;
+                    // PERBAIKAN 3: Ambil ingatan curang dari memori HP, jangan biarkan tertimpa oleh server yang terlambat
+                    const localCheat = parseInt(localStorage.getItem(cheatKey)) || 0;
+                    cheatCount = Math.max(localCheat, rData.pelanggaran || 0);
+                    
+                    if (cheatCount > (rData.pelanggaran || 0)) {
+                        await updateDoc(resRef, { pelanggaran: cheatCount }).catch(e=>{});
+                    }
+                    
                     localStorage.setItem(cheatKey, cheatCount);
                     await updateDoc(resRef, { status: 'mengerjakan', lastHeartbeat: serverTimestamp() });
                 }
@@ -1122,7 +1139,9 @@
 
                 if(examData.settingAcakOpsi) {
                     questions.forEach(q => {
-                        if(q.type === 'pg' || q.type === 'pgk') shuffleArray(q.opsi);
+                        if(q.type === 'pg' || q.type === 'pgk' || q.type === 'bs') {
+                            shuffleArray(q.opsi);
+                        }
                     });
                 }
 
@@ -1178,18 +1197,35 @@
             }
             examEndTime = parseInt(savedTime);
 
-            // RADAR TAMBAH WAKTU DARI GURU
+            // RADAR TAMBAH WAKTU & KENDALI MODE LAYAR REAL-TIME DARI GURU
             if (activeExamListener) activeExamListener();
             activeExamListener = onSnapshot(doc(db, 'ujian_terjadwal', code), (docSnap) => {
                 if(docSnap.exists()) {
                     const data = docSnap.data();
+                    
+                    // 1. Deteksi Penambahan Waktu
                     const newEkstra = data.ekstraWaktu || 0;
                     if (newEkstra > lastEkstraWaktu) {
                         const diffMenit = newEkstra - lastEkstraWaktu;
                         examEndTime += (diffMenit * 60000); // Tambah milidetik ke sisa waktu
                         localStorage.setItem(timerKey, examEndTime);
                         lastEkstraWaktu = newEkstra;
-                        
+                    }
+                    
+                    // 2. Deteksi Saklar Paksa Mode Terang
+                    const tombolTemaList = document.querySelectorAll('button[onclick="window.toggleTheme()"]');
+                    if (data.paksaTerang === true) {
+                        // Sembunyikan tombol ganti tema di layar siswa
+                        tombolTemaList.forEach(btn => btn.classList.add('hidden'));
+                        // Cabut mode gelap seketika (tanpa menghapus riwayat pilihan siswa)
+                        document.documentElement.classList.remove('dark');
+                    } else {
+                        // Munculkan kembali tombol ganti tema
+                        tombolTemaList.forEach(btn => btn.classList.remove('hidden'));
+                        // Kembalikan layar ke pengaturan favorit siswa
+                        if (localStorage.theme === 'dark') {
+                            document.documentElement.classList.add('dark');
+                        }
                     }
                 }
             });
