@@ -1077,6 +1077,42 @@
                 inputEl.disabled = false;
             }
         };
+		
+		window.uploadFileEsai = async function(inputEl, idx, type) {
+            if (!inputEl.files || inputEl.files.length === 0) return;
+            const file = inputEl.files[0];
+            const progressEl = document.getElementById('progress-upload-' + idx);
+            progressEl.classList.remove('hidden');
+            inputEl.disabled = true;
+
+            try {
+                const namaFileAman = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+                const path = 'jawaban_siswa/esai/' + dataSiswa.nis + '_' + Date.now() + '_' + namaFileAman;
+                const storageRef = storage.ref().child(path);
+                
+                await storageRef.put(file);
+                const downloadUrl = await storageRef.getDownloadURL();
+                
+                // Tambahkan link lampiran ke dalam kotak teks jawaban
+                const textarea = document.getElementById('esai-teks-' + idx);
+                let nilaiSekarang = textarea.value;
+                if (nilaiSekarang) nilaiSekarang += '\n\n';
+                nilaiSekarang += `[LAMPIRAN FILE]: ${downloadUrl}`;
+                textarea.value = nilaiSekarang;
+                
+                // Simpan otomatis ke state
+                simpanJawabanSpesifik(idx, nilaiSekarang, type);
+                
+                progressEl.classList.add('hidden');
+                inputEl.disabled = false;
+                alert("File berhasil diunggah dan tautan telah disisipkan ke jawaban Anda.");
+            } catch (e) {
+                console.error(e);
+                alert("Gagal mengunggah file. Pastikan koneksi internet stabil.");
+                progressEl.classList.add('hidden');
+                inputEl.disabled = false;
+            }
+        };
 
         window.simpanJawabanSpesifik = function(idxAsli, val, type, subIdx = null) {
             if (!type || type === 'pg') {
@@ -1234,7 +1270,15 @@
                     });
                     opsiHtml += `</tbody></table>`;
                 } else if (soalData.type === 'esai-singkat' || soalData.type === 'esai-kompleks') {
-                    opsiHtml += `<textarea onchange="simpanJawabanSpesifik(${idx}, this.value, '${soalData.type}')" class="w-full p-4 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:ring-2 ring-indigo-500 outline-none custom-scrollbar text-slate-800 dark:text-slate-200 transition-all" rows="${soalData.type === 'esai-singkat' ? 2 : 6}" placeholder="Ketik jawaban...">${jawabanTersimpan || ""}</textarea>`;
+                    opsiHtml += `
+                        <textarea id="esai-teks-${idx}" onchange="simpanJawabanSpesifik(${idx}, this.value, '${soalData.type}')" class="w-full p-4 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl focus:ring-2 ring-indigo-500 outline-none custom-scrollbar text-slate-800 dark:text-slate-200 transition-all mb-3" rows="${soalData.type === 'esai-singkat' ? 2 : 6}" placeholder="Ketik jawaban...">${jawabanTersimpan || ""}</textarea>
+                        
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2"><i class="ph ph-camera"></i> Unggah Foto/File Jawaban (Opsional):</label>
+                        <div class="flex flex-col gap-2 bg-indigo-50 dark:bg-slate-900 p-4 rounded-xl border border-indigo-200 dark:border-slate-600 shadow-sm">
+                            <input type="file" accept="image/*,application/pdf" capture="environment" class="block w-full text-sm text-slate-600 dark:text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer shadow-sm transition-colors" onchange="uploadFileEsai(this, ${idx}, '${soalData.type}')">
+                            <div id="progress-upload-${idx}" class="hidden text-xs font-bold text-indigo-600 mt-2 animate-pulse">Mengunggah file... Mohon tunggu.</div>
+                        </div>
+                    `;
                 }
 
                 htmlKumpulan += `
