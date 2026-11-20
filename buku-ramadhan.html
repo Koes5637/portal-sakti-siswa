@@ -472,250 +472,224 @@
                 <i id="save-icon" class="ph-fill ph-floppy-disk text-lg"></i>
                 <span id="save-label">Simpan Jurnal Hari ke-1</span>
             </button>
+
+            <!-- TOMBOL KOSONGKAN / HAPUS JURNAL HARI INI (Hanya tampil jika sudah tersimpan & belum diparaf) -->
+            <button type="button" id="btn-delete-jurnal" onclick="app.deleteCurrentDay()" class="hidden w-full py-3 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/25 font-bold text-xs transition flex items-center justify-center gap-2">
+                <i class="ph ph-trash text-base"></i>
+                <span id="delete-label">Kosongkan / Hapus Jurnal Hari ke-1</span>
+            </button>
         </section>
 
         <!-- ================================================================= -->
-        <!-- TAB 2: AL-QUR'AN & TADARUS LANGSUNG (2 KHAT + 1 KLIK LANJUT)      -->
+        <!-- TAB 2: AL-QUR'AN & TADARUS (2 KHAT + SMART BOOKMARK)              -->
         <!-- ================================================================= -->
         <section id="tab-quran" class="tab-view px-4 pt-4 space-y-4">
 
-            <!-- Kartu Progres Khatam -->
-            <div class="rounded-3xl p-4 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-lg relative overflow-hidden">
-                <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-300/20 rounded-full blur-2xl"></div>
-                <div class="relative z-10">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-100">Progres Khatam Al-Qur'an</span>
-                        <span id="quran-pct-badge" class="px-2.5 py-0.5 rounded-full bg-white/20 text-xs font-mono font-bold">0.0%</span>
+            <!-- Kartu Progres Khatam & Smart Bookmark -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div>
+                        <p class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                            <i class="ph-fill ph-book-open-text text-sm"></i> Progres Tadarus Al-Qur'an
+                        </p>
+                        <div class="flex items-baseline gap-1.5 mt-0.5">
+                            <span id="quran-total-ayat" class="text-2xl font-black font-mono text-slate-800 dark:text-white">0</span>
+                            <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">/ 6.236 ayat</span>
+                        </div>
                     </div>
-                    <div class="flex items-baseline gap-1.5 mb-2">
-                        <span id="quran-total-ayat" class="text-3xl font-black font-mono">0</span>
-                        <span class="text-xs text-emerald-100">/ 6.236 ayat</span>
-                    </div>
-                    <div class="w-full h-2.5 rounded-full bg-black/25 overflow-hidden">
-                        <div id="quran-progress-bar" class="h-full rounded-full bg-gradient-to-r from-amber-300 to-yellow-400 transition-all duration-500" style="width: 0%"></div>
-                    </div>
+                    <span id="quran-pct-badge" class="px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono font-extrabold text-xs border border-emerald-500/25">0.0%</span>
                 </div>
-            </div>
+                <div class="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                    <div id="quran-progress-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style="width: 0%"></div>
+                </div>
 
-            <!-- Kartu Mencolok: Lanjutkan Tadarus (Smart Bookmark) -->
-            <div id="smart-bookmark-card" class="hidden glass-panel rounded-3xl p-4 border-2 border-amber-400/60 bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-teal-500/10 shadow-md">
-                <div class="flex items-center justify-between gap-3">
-                    <div class="min-w-0 space-y-0.5">
-                        <span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                            <i class="ph-fill ph-bookmark-simple"></i> Lanjutkan Tadarus
-                        </span>
-                        <p id="smart-bookmark-last" class="text-xs font-bold text-slate-800 dark:text-white truncate">Terakhir: Al-Fatihah Ayat 7</p>
-                        <p id="smart-bookmark-next" class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 truncate">→ Lanjut otomatis mulai Al-Baqarah Ayat 1</p>
+                <!-- Smart Bookmark: Lanjutkan Tadarus Otomatis -->
+                <div id="smart-bookmark-card" class="hidden pt-2 border-t border-slate-200/70 dark:border-slate-700/60 flex items-center justify-between gap-2.5">
+                    <div class="min-w-0">
+                        <p id="smart-bookmark-last" class="text-[11px] font-extrabold text-slate-700 dark:text-slate-200 truncate"></p>
+                        <p id="smart-bookmark-next" class="text-[10px] font-semibold text-amber-600 dark:text-amber-400 truncate"></p>
                     </div>
-                    <button type="button" onclick="app.continueLastSurah()" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-extrabold text-xs shadow-md shrink-0 flex items-center gap-1.5 transition active:scale-95">
+                    <button type="button" onclick="app.continueLastSurah()" class="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-[11px] shrink-0 flex items-center gap-1 shadow-sm transition active:scale-95">
+                        <i class="ph-fill ph-play"></i>
                         <span>Lanjutkan</span>
-                        <i class="ph-bold ph-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- TAMPILAN DAFTAR SURAH -->
+            <!-- DAFTAR 114 SURAH -->
             <div id="quran-list-view" class="space-y-3">
                 <div class="relative">
                     <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
-                    <input type="text" id="quran-search" oninput="app.filterSurahList()" placeholder="Cari surah (contoh: Yasin, Al-Kahfi, Al-Ikhlas)..." class="w-full pl-10 pr-4 py-3 rounded-2xl text-xs font-medium glass-panel outline-none focus:ring-2 focus:ring-emerald-500">
+                    <input type="text" id="quran-search" oninput="app.filterSurahList()" placeholder="Cari surah (contoh: Yasin, Al-Kahfi, 18)..." class="w-full pl-10 pr-4 py-3 rounded-2xl glass-panel text-xs font-medium outline-none focus:ring-2 focus:ring-emerald-500/40">
                 </div>
 
-                <div id="quran-api-note" class="hidden text-[11px] px-3 py-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25 flex items-center gap-2">
-                    <i class="ph-fill ph-wifi-slash text-sm shrink-0"></i>
-                    <span>Menampilkan 6 surah offline bawaan (sudah mendukung Tajwid Berwarna). Aktifkan internet untuk memuat 114 surah lengkap.</span>
+                <div id="quran-api-note" class="hidden px-3.5 py-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-[11px] font-semibold text-amber-800 dark:text-amber-200">
+                    Mode Offline: Menampilkan 6 surah pilihan. Hubungkan internet untuk membuka seluruh 114 surah.
                 </div>
 
-                <div id="surah-list-container" class="space-y-2">
+                <div id="surah-list-container" class="space-y-2.5">
                     <!-- Daftar surah dirender lewat JS -->
                 </div>
             </div>
 
-            <!-- TAMPILAN BACA SURAH -->
+            <!-- TAMPILAN BACA SURAH (2 VERSI KHAT + UKURAN HURUF + 1 KLIK SELESAI) -->
             <div id="quran-reader-view" class="hidden space-y-3">
-                <!-- Header Sticky Reader: Kembali, Pemilih 2 Versi Khat, Ukuran Huruf A-/A+, Terjemahan -->
-                <div class="glass-panel rounded-2xl p-3 space-y-2.5 sticky top-[118px] z-30 shadow-md">
+                <!-- Header Kontrol Baca Surah -->
+                <div class="glass-panel rounded-3xl p-3.5 space-y-3 sticky top-[118px] z-30">
                     <div class="flex items-center justify-between gap-2">
-                        <button type="button" onclick="app.closeSurahReader()" class="px-2.5 py-1.5 rounded-xl bg-slate-200/70 dark:bg-slate-800 hover:bg-emerald-500/15 text-xs font-bold flex items-center gap-1 shrink-0 transition">
-                            <i class="ph ph-arrow-left"></i> Surah
+                        <button type="button" onclick="app.closeSurahReader()" class="h-8 px-2.5 rounded-xl bg-slate-200/70 dark:bg-slate-800 hover:bg-emerald-500/15 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1 transition shrink-0">
+                            <i class="ph ph-arrow-left"></i> Daftar
                         </button>
                         <div class="text-center min-w-0 flex-1">
-                            <h3 id="reader-surah-title" class="text-xs font-extrabold truncate">Al-Fatihah</h3>
-                            <p id="reader-surah-meta" class="text-[10px] text-slate-500 dark:text-slate-400">7 Ayat • Mekah</p>
+                            <h3 id="reader-surah-title" class="text-xs font-extrabold text-slate-800 dark:text-white truncate">1. Al-Fatihah</h3>
+                            <p id="reader-surah-meta" class="text-[10px] text-slate-500 dark:text-slate-400 truncate">7 Ayat • Mekah</p>
                         </div>
-                        <button type="button" id="btn-toggle-trans" onclick="app.toggleTranslation()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold shrink-0 transition">
+                        <button type="button" id="btn-toggle-trans" onclick="app.toggleTranslation()" class="h-8 px-2.5 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold shrink-0 transition">
                             Terjemah: ON
                         </button>
                     </div>
 
-                    <!-- Segmented Switch 2 Versi Khat + Kontrol Ukuran Huruf A- / A+ -->
-                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/70 dark:border-slate-700/60">
-                        <!-- Pemilih 2 Versi Khat -->
-                        <div class="inline-flex p-0.5 rounded-xl bg-slate-200/80 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700">
+                    <!-- Pemilih 2 Versi Khat & Ukuran Huruf -->
+                    <div class="flex items-center justify-between gap-2 flex-wrap pt-2 border-t border-slate-200/70 dark:border-slate-700/60">
+                        <div class="inline-flex p-1 rounded-xl bg-slate-200/70 dark:bg-slate-800 gap-1">
                             <button type="button" id="btn-khat-indo" onclick="app.setKhatMode('indo')" class="khat-btn active px-2.5 py-1 rounded-lg text-[10px] font-extrabold text-slate-600 dark:text-slate-300 transition">
                                 Mushaf Indonesia
                             </button>
-                            <button type="button" id="btn-khat-tajwid" onclick="app.setKhatMode('tajwid')" class="khat-btn px-2.5 py-1 rounded-lg text-[10px] font-extrabold text-slate-600 dark:text-slate-300 flex items-center gap-1 transition">
-                                <i class="ph-fill ph-palette text-xs"></i>
-                                <span>Utsmani Tajwid</span>
+                            <button type="button" id="btn-khat-tajwid" onclick="app.setKhatMode('tajwid')" class="khat-btn px-2.5 py-1 rounded-lg text-[10px] font-extrabold text-slate-600 dark:text-slate-300 transition">
+                                Utsmani Tajwid
                             </button>
                         </div>
 
-                        <!-- Kontrol Ukuran Huruf A- / A+ -->
-                        <div class="flex items-center gap-1">
-                            <button type="button" id="btn-arab-dec" onclick="app.changeArabicSize(-2)" class="h-7 px-2 rounded-lg bg-slate-200/80 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white text-slate-700 dark:text-slate-200 font-extrabold text-[11px] transition active:scale-95" title="Perkecil Huruf Arab">
-                                A-
-                            </button>
-                            <span id="arabic-size-label" class="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 w-8 text-center">26px</span>
-                            <button type="button" id="btn-arab-inc" onclick="app.changeArabicSize(2)" class="h-7 px-2 rounded-lg bg-slate-200/80 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white text-slate-700 dark:text-slate-200 font-extrabold text-[11px] transition active:scale-95" title="Perbesar Huruf Arab">
-                                A+
-                            </button>
+                        <div class="inline-flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-1 rounded-xl">
+                            <button type="button" id="btn-arab-dec" onclick="app.changeArabicSize(-2)" class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center transition">A-</button>
+                            <span id="arabic-size-label" class="text-[10px] font-mono font-bold px-1 text-slate-600 dark:text-slate-300">26px</span>
+                            <button type="button" id="btn-arab-inc" onclick="app.changeArabicSize(2)" class="w-7 h-7 rounded-lg bg-white dark:bg-slate-700 text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center justify-center transition">A+</button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Legenda Warna Tajwid (Hanya tampil saat mode Utsmani Tajwid aktif) -->
-                <div id="tajwid-legend-card" class="hidden glass-panel rounded-2xl px-3.5 py-2.5 border border-emerald-500/20">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                            <i class="ph-fill ph-sparkle text-amber-500"></i> Panduan Warna Tajwid
-                        </span>
-                        <span id="tajwid-source-badge" class="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">Utsmani Tajwid</span>
-                    </div>
-                    <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
-                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#0284c7] dark:bg-[#38bdf8]"></span>Qalqalah</span>
-                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#16a34a] dark:bg-[#4ade80]"></span>Ghunnah / Idgham</span>
-                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#ea580c] dark:bg-[#fb923c]"></span>Ikhfa &amp; Iqlab</span>
-                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#9333ea] dark:bg-[#c084fc]"></span>Mad (Panjang)</span>
-                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#94a3b8]"></span>Huruf Diam / Bilaghunnah</span>
+                    <!-- Aksi Cepat Surah: Catat 1 Surah / Reset Penanda -->
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <button type="button" onclick="app.logFullSurah()" class="flex-1 py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-700 dark:text-emerald-300 hover:text-white text-[11px] font-extrabold transition flex items-center justify-center gap-1.5">
+                            <i class="ph-fill ph-checks"></i>
+                            <span>Selesai 1 Surah Penuh</span>
+                        </button>
+                        <button type="button" id="btn-reset-surah" onclick="app.resetCurrentSurahProgress()" class="hidden py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] font-bold transition">
+                            Reset Penanda Surah
+                        </button>
                     </div>
                 </div>
 
-                <!-- Info Cara Pakai 1 Klik + Tombol Reset Penanda Surah -->
-                <div class="flex items-center justify-between gap-2 px-1">
-                    <p class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                        <i class="ph-fill ph-info text-emerald-500 mr-0.5"></i> Cukup klik <strong>Selesai Sampai Ayat Ini</strong> di akhir sesi bacaanmu.
-                    </p>
-                    <button type="button" id="btn-reset-surah" onclick="app.resetCurrentSurahProgress()" class="hidden text-[10px] font-bold text-rose-500 hover:text-rose-600 underline shrink-0 transition">
-                        Reset Penanda Surah
-                    </button>
+                <!-- Legenda Warna Tajwid (Hanya muncul saat mode Utsmani Tajwid aktif) -->
+                <div id="tajwid-legend-card" class="hidden glass-panel rounded-2xl p-3 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Panduan Warna Tajwid</span>
+                        <span id="tajwid-source-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">Utsmani Tajwid</span>
+                    </div>
+                    <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>Qalqalah</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-green-600"></span>Ghunnah / Idgham</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>Ikhfa / Iqlab</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>Mad</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>Huruf Diam / Bilaghunnah</span>
+                    </div>
                 </div>
 
-                <!-- Header Bismillah (Otomatis tampil kecuali Al-Fatihah & At-Taubah) -->
-                <div id="reader-bismillah-card" class="hidden glass-panel rounded-3xl px-4 py-2.5 border border-emerald-500/25 bg-emerald-500/5">
-                    <p id="reader-bismillah-text" class="arabic-text bismillah-center text-emerald-800 dark:text-emerald-200">
-                        بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ
-                    </p>
+                <!-- Kartu Bismillah -->
+                <div id="reader-bismillah-card" class="hidden glass-panel rounded-3xl px-4 py-3 text-center">
+                    <p id="reader-bismillah-text" class="arabic-text bismillah-center text-emerald-700 dark:text-emerald-300">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
                 </div>
 
-                <!-- Daftar Ayat -->
-                <div id="reader-ayat-container" class="space-y-3.5">
+                <!-- Daftar Ayat Surah -->
+                <div id="reader-ayat-container" class="space-y-3">
                     <!-- Ayat dirender lewat JS -->
                 </div>
-
-                <!-- Tombol Catat 1 Surah Selesai -->
-                <button type="button" id="btn-log-full-surah" onclick="app.logFullSurah()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-extrabold text-xs shadow-md flex items-center justify-center gap-2 transition active:scale-95">
-                    <i class="ph-fill ph-check-fat text-base"></i>
-                    <span>Selesai 1 Surah Penuh (Hari ke-<span class="active-day-num">1</span>)</span>
-                </button>
             </div>
         </section>
 
         <!-- ================================================================= -->
-        <!-- TAB 3: 30 MISI HARIAN (GAMIFIKASI POSITIF)                        -->
+        <!-- TAB 3: 30 MISI HARIAN RAMADHAN                                    -->
         <!-- ================================================================= -->
         <section id="tab-misi" class="tab-view px-4 pt-4 space-y-4">
-
-            <!-- Counter Bintang & Lentera -->
-            <div class="grid grid-cols-2 gap-3">
-                <div class="glass-panel rounded-3xl p-4 flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center text-2xl shrink-0">
-                        <i class="ph-fill ph-star"></i>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Bintang</p>
-                        <p id="misi-stars-count" class="text-2xl font-black font-mono text-amber-600 dark:text-amber-400">0</p>
-                    </div>
+            <div class="glass-panel rounded-3xl p-4 flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5">
+                        <i class="ph-fill ph-sparkle text-amber-500"></i> 30 Misi Harian Ramadhan
+                    </h2>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Selesaikan hikmah &amp; kuis mini untuk meraih bintang.</p>
                 </div>
-                <div class="glass-panel rounded-3xl p-4 flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center text-2xl shrink-0">
-                        <i class="ph-fill ph-lamp"></i>
+                <div class="flex items-center gap-2 shrink-0">
+                    <div class="px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-center">
+                        <div class="text-xs font-black font-mono text-amber-600 dark:text-amber-400" id="misi-stars-count">0</div>
+                        <div class="text-[9px] font-bold text-slate-500 dark:text-slate-400">Bintang</div>
                     </div>
-                    <div>
-                        <p class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Lentera</p>
-                        <p class="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400"><span id="misi-lantern-count">0</span><span class="text-xs text-slate-400">/30</span></p>
+                    <div class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-center">
+                        <div class="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400" id="misi-lantern-count">0</div>
+                        <div class="text-[9px] font-bold text-slate-500 dark:text-slate-400">Lentera</div>
                     </div>
                 </div>
             </div>
 
-            <div class="px-1 flex items-center justify-between">
-                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">30 Misi Akhlak &amp; Wawasan Ramadhan</h2>
-                <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Klik hari untuk mulai</span>
-            </div>
-
-            <!-- Grid 30 Misi -->
-            <div id="missions-grid" class="grid grid-cols-2 gap-2.5">
-                <!-- Dirender lewat JS -->
+            <div id="missions-grid" class="grid grid-cols-2 gap-3">
+                <!-- 30 Kartu Misi dirender lewat JS -->
             </div>
         </section>
 
         <!-- ================================================================= -->
-        <!-- TAB 4: LENCANA & REKAP PRIBADI                                    -->
+        <!-- TAB 4: STATISTIK, 12 LENCANA APRESIASI, & CETAK PDF               -->
         <!-- ================================================================= -->
         <section id="tab-lencana" class="tab-view px-4 pt-4 space-y-4">
-
             <!-- Ringkasan Statistik Pribadi -->
             <div class="glass-panel rounded-3xl p-4 space-y-3">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-                        <i class="ph-fill ph-chart-pie-slice text-base"></i> Rekap Ibadah Pribadi
-                    </h2>
-                    <span class="text-[10px] font-semibold text-slate-400">Refleksi Diri</span>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                        <p id="stat-filled" class="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">0</p>
-                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Hari Terisi</p>
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                    <i class="ph-fill ph-chart-bar text-base"></i> Ringkasan Ibadahmu
+                </h2>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                        <div id="stat-filled" class="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400">0</div>
+                        <div class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Hari Diisi</div>
                     </div>
-                    <div class="p-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-center">
-                        <p id="stat-puasa" class="text-xl font-black font-mono text-teal-600 dark:text-teal-400">0</p>
-                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Puasa Penuh</p>
+                    <div class="p-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                        <div id="stat-puasa" class="text-lg font-black font-mono text-teal-600 dark:text-teal-400">0</div>
+                        <div class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Puasa Penuh</div>
                     </div>
-                    <div class="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-center">
-                        <p id="stat-sholat" class="text-xl font-black font-mono text-sky-600 dark:text-sky-400">0%</p>
-                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Sholat Wajib</p>
+                    <div class="p-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                        <div id="stat-sholat" class="text-lg font-black font-mono text-sky-600 dark:text-sky-400">0%</div>
+                        <div class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Sholat Wajib</div>
                     </div>
-                    <div class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-center">
-                        <p id="stat-jamaah" class="text-xl font-black font-mono text-indigo-600 dark:text-indigo-400">0%</p>
-                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Berjamaah</p>
+                    <div class="p-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                        <div id="stat-jamaah" class="text-lg font-black font-mono text-indigo-600 dark:text-indigo-400">0%</div>
+                        <div class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Berjamaah</div>
                     </div>
-                    <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
-                        <p id="stat-ayat" class="text-xl font-black font-mono text-amber-600 dark:text-amber-400">0</p>
-                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Ayat Tadarus</p>
+                    <div class="p-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                        <div id="stat-ayat" class="text-lg font-black font-mono text-amber-600 dark:text-amber-400">0</div>
+                        <div class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Ayat Tadarus</div>
                     </div>
-                    <div class="p-3 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 text-center">
-                        <p id="stat-misi" class="text-xl font-black font-mono text-fuchsia-600 dark:text-fuchsia-400">0</p>
-                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Misi Selesai</p>
+                    <div class="p-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                        <div id="stat-misi" class="text-lg font-black font-mono text-rose-600 dark:text-rose-400">0</div>
+                        <div class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Misi Selesai</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Koleksi 12 Lencana Apresiasi -->
+            <!-- Koleksi 12 Lencana Apresiasi Pribadi -->
             <div class="glass-panel rounded-3xl p-4 space-y-3">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-xs font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                        <i class="ph-fill ph-medal text-base"></i> Koleksi Lencana (<span id="badge-unlocked-count">0</span>/12)
+                    <h2 class="text-xs font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                        <i class="ph-fill ph-medal text-base"></i> Lencana Apresiasi
                     </h2>
+                    <span class="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400">
+                        <strong id="badge-unlocked-count" class="text-amber-600 dark:text-amber-400">0</strong> / 12 Terbuka
+                    </span>
                 </div>
                 <div id="badges-grid" class="grid grid-cols-2 gap-2.5">
-                    <!-- 12 Badge dirender lewat JS -->
+                    <!-- 12 Lencana dirender lewat JS -->
                 </div>
             </div>
 
-            <!-- Tombol Besar Cetak / Unduh PDF -->
-            <button type="button" onclick="app.printPDF()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-900 dark:from-emerald-500 dark:to-teal-600 text-white font-extrabold text-sm shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2.5">
-                <i class="ph-fill ph-file-pdf text-xl"></i>
-                <span>Cetak / Unduh Buku Ramadhan (PDF)</span>
+            <!-- Tombol Cetak / Unduh PDF -->
+            <button type="button" onclick="app.printPDF()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-900 dark:from-emerald-600 dark:to-teal-600 text-white font-extrabold text-xs tracking-wide shadow-lg flex items-center justify-center gap-2 transition active:scale-[0.98]">
+                <i class="ph-fill ph-printer text-lg"></i>
+                <span>Cetak / Unduh PDF Buku Ramadhan (A4)</span>
             </button>
         </section>
 
@@ -811,7 +785,7 @@
     <script type="module">
         import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { getFirestore, doc, getDoc, setDoc, deleteField } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         // ---------------------------------------------------------------------
         // 1. KONSTANTA DATA: SHOLAT, KEBAIKAN, FALLBACK AL-QUR'AN TAJWID, MISI
@@ -1127,6 +1101,7 @@
                 this.currentTajwidSource = 'Utsmani Tajwid';
                 this.pendingScrollAyat = null;
                 this.resetConfirmArmed = false;
+                this.deleteDayArmed = false;
                 this.activeMission = null;
                 this.missionCaseDone = false;
                 this.missionQuizDone = false;
@@ -1509,8 +1484,17 @@
                 const saveLabel = document.getElementById('save-label');
                 if (saveLabel) saveLabel.textContent = `Simpan Jurnal Hari ke-${key}`;
 
-                // Banner Paraf Guru (Read-Only)
+                // Reset & atur visibilitas tombol Hapus Jurnal (hanya muncul jika tersimpan & belum diparaf)
+                this.deleteDayArmed = false;
                 const isParaf = Boolean(existing && (existing.paraf === true || existing.parafGuru === true));
+                const btnDelete = document.getElementById('btn-delete-jurnal');
+                const deleteLabel = document.getElementById('delete-label');
+                if (btnDelete && deleteLabel) {
+                    btnDelete.classList.toggle('hidden', !existing || isParaf);
+                    deleteLabel.textContent = `Kosongkan / Hapus Jurnal Hari ke-${key}`;
+                }
+
+                // Banner Paraf Guru (Read-Only)
                 const parafBanner = document.getElementById('paraf-banner');
                 const parafNote = document.getElementById('paraf-note');
                 if (isParaf) {
@@ -1722,9 +1706,65 @@
                 icon.className = 'ph-fill ph-floppy-disk text-lg';
 
                 if (ok) {
+                    const saveLabel = document.getElementById('save-label');
+                    if (saveLabel) saveLabel.textContent = `Simpan Jurnal Hari ke-${key}`;
+                    const btnDelete = document.getElementById('btn-delete-jurnal');
+                    const isParaf = Boolean(this.data.days[key] && (this.data.days[key].paraf === true || this.data.days[key].parafGuru === true));
+                    if (btnDelete) btnDelete.classList.toggle('hidden', isParaf);
+
                     this.renderDayPills();
                     this.renderQuranProgress();
                     this.showToast(`Alhamdulillah! Jurnal Hari ke-${key} tersimpan.`);
+                }
+            }
+
+            // Hapus / Kosongkan Jurnal pada Hari Aktif (Konfirmasi 2-klik tanpa confirm())
+            async deleteCurrentDay() {
+                const key = String(this.activeDay);
+                const existing = this.data.days[key];
+                if (!existing) return;
+
+                if (existing.paraf === true || existing.parafGuru === true) {
+                    this.showToast('Jurnal yang sudah diparaf guru tidak dapat dihapus.');
+                    return;
+                }
+
+                const deleteLabel = document.getElementById('delete-label');
+                if (!this.deleteDayArmed) {
+                    this.deleteDayArmed = true;
+                    if (deleteLabel) deleteLabel.textContent = `Klik Sekali Lagi untuk Menghapus Hari ke-${key}`;
+                    this.showToast('Klik sekali lagi untuk mengosongkan jurnal hari ini');
+                    return;
+                }
+
+                this.deleteDayArmed = false;
+                delete this.data.days[key];
+                this.recalculateTotalAyat();
+                this.data.updatedAt = new Date().toISOString();
+
+                let ok = true;
+                if (this.isDemo) {
+                    this.safeSetStorage(DEMO_STORAGE_KEY, JSON.stringify(this.data));
+                } else {
+                    try {
+                        await setDoc(doc(this.db, 'jurnal_ramadhan', this.nis), {
+                            days: { [key]: deleteField() },
+                            quranProgress: this.data.quranProgress,
+                            updatedAt: this.data.updatedAt
+                        }, { merge: true });
+                    } catch (e) {
+                        console.error('Gagal menghapus hari di Firestore:', e);
+                        this.showToast('Gagal menghapus data di server, periksa koneksi');
+                        ok = false;
+                    }
+                }
+
+                if (ok) {
+                    this.renderDayPills();
+                    this.loadDayForm(this.activeDay);
+                    this.renderQuranProgress();
+                    this.renderBadgesAndStats();
+                    this.showToast(`Jurnal Hari ke-${key} berhasil dikosongkan.`);
                 }
             }
 
@@ -2072,19 +2112,18 @@
                 this.data.quranProgress.lastSurahName = surahName;
                 this.data.quranProgress.lastAyat = targetAyat;
 
-                // Otomatis isi / akumulasi Tadarus di Jurnal Hari Aktif
+                // Hanya masukkan ke DRAF Jurnal Hari Aktif (belum disimpan ke Firebase sebelum klik "Simpan Jurnal")
                 const dayKey = String(this.activeDay);
-                if (!this.data.days[dayKey]) this.data.days[dayKey] = this.getEmptyDay();
-                const prevTad = this.data.days[dayKey].tadarus || {};
+                if (!this.draftDay) this.draftDay = this.getEmptyDay();
+                const prevTad = this.draftDay.tadarus || {};
                 const prevDayCount = Number(prevTad.jumlahAyat ?? prevTad.jumlah ?? 0);
 
                 if (prevDayCount > 0 && prevTad.surah) {
                     if (prevTad.surah === surahName) {
-                        // Lanjutan di surah yang sama pada hari yang sama
                         const mergedAwal = Math.min(Number(prevTad.awal) || startAyat, startAyat);
                         const mergedAkhir = Math.max(Number(prevTad.akhir) || targetAyat, targetAyat);
                         const totalHariIni = prevDayCount + jumlahAyatSesi;
-                        this.data.days[dayKey].tadarus = {
+                        this.draftDay.tadarus = {
                             surah: surahName,
                             awal: mergedAwal,
                             akhir: mergedAkhir,
@@ -2092,12 +2131,11 @@
                             jumlahAyat: totalHariIni
                         };
                     } else {
-                        // Membaca lebih dari 1 surah di hari yang sama -> gabungkan nama surah & akumulasi ayat
                         const surahCombined = prevTad.surah.includes(surahName)
                             ? prevTad.surah
                             : `${prevTad.surah}, ${surahName}`;
                         const totalHariIni = prevDayCount + jumlahAyatSesi;
-                        this.data.days[dayKey].tadarus = {
+                        this.draftDay.tadarus = {
                             surah: surahCombined,
                             awal: startAyat,
                             akhir: targetAyat,
@@ -2106,8 +2144,7 @@
                         };
                     }
                 } else {
-                    // Sesi pertama hari ini
-                    this.data.days[dayKey].tadarus = {
+                    this.draftDay.tadarus = {
                         surah: surahName,
                         awal: startAyat,
                         akhir: targetAyat,
@@ -2116,18 +2153,21 @@
                     };
                 }
 
-                this.recalculateTotalAyat();
-                await this.persistData();
+                // Perbarui langsung input tadarus di Tab Jurnal tanpa mereset centang draf lainnya
+                const tadDraft = this.draftDay.tadarus;
+                document.getElementById('input-tadarus-surah').value = tadDraft.surah || '';
+                document.getElementById('input-tadarus-awal').value = tadDraft.awal || '';
+                document.getElementById('input-tadarus-akhir').value = tadDraft.akhir || '';
+                document.getElementById('input-tadarus-jumlah').value = tadDraft.jumlahAyat ?? tadDraft.jumlah ?? 0;
 
+                const saveLabel = document.getElementById('save-label');
+                if (saveLabel) saveLabel.textContent = `Simpan Jurnal Hari ke-${dayKey} (Belum Disimpan)`;
+
+                this.recalculateTotalAyat();
                 this.renderQuranProgress();
                 this.renderSurahReader();
-                this.loadDayForm(this.activeDay);
-                this.renderDayPills();
 
-                const nextMsg = targetAyat < totalAyatSurah
-                    ? `Sesi berikutnya otomatis mulai dari ayat ${targetAyat + 1}!`
-                    : `Surah ${surahName} tamat! Sesi berikutnya lanjut ke surah selanjutnya.`;
-                this.showToast(`Tercatat di Jurnal Hari ke-${dayKey}: ${surahName} ayat ${startAyat}–${targetAyat} (${jumlahAyatSesi} ayat). ${nextMsg}`);
+                this.showToast(`Tadarus ${surahName} (${startAyat}–${targetAyat}) masuk draf. Klik "Simpan Jurnal" untuk menyimpan!`);
             }
 
             async logFullSurah() {
