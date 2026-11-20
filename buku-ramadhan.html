@@ -1,0 +1,2507 @@
+<!DOCTYPE html>
+<html lang="id" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Buku Ramadhan Digital - SAKTI</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons CDN -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Google Fonts: Inter, JetBrains Mono, Orbitron, Amiri (Arab Al-Qur'an) -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        cyber: ['Orbitron', 'sans-serif'],
+                        arab: ['Amiri', 'serif']
+                    },
+                    colors: {
+                        'deep': '#0f172a',
+                        'surface': '#1e293b',
+                        'primary': '#10b981',
+                        'ramadhan': '#0d9488',
+                        'gold': '#f59e0b'
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.35s ease-out forwards',
+                        'float': 'float 6s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(8px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        /* Latar Comfort & Glow bernuansa Ramadhan */
+        body {
+            background-image:
+                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.16) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.14) 0px, transparent 50%);
+            background-attachment: fixed;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html.dark body {
+            background-image:
+                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.10) 0px, transparent 50%);
+        }
+
+        /* Panel Glassmorphism konsisten dengan Portal Siswa */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.80);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08);
+        }
+        html.dark .glass-panel {
+            background: rgba(30, 41, 59, 0.74);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.32);
+        }
+
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 96px;
+        }
+
+        /* Sembunyikan scrollbar horizontal pada pemilih hari */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Tab & Navigasi Bawah */
+        .tab-view { display: none; }
+        .tab-view.active { display: block; animation: fadeIn 0.3s ease-out forwards; }
+
+        .nav-item { color: #64748b; transition: all 0.25s ease; }
+        html.dark .nav-item { color: #94a3b8; }
+        .nav-item.active { color: #10b981; }
+        html.dark .nav-item.active { color: #34d399; text-shadow: 0 0 12px rgba(52, 211, 153, 0.45); }
+        .nav-item.active i { transform: scale(1.15) translateY(-2px); }
+
+        /* ===================================================================== */
+        /* TIPOGRAFI ARAB AL-QUR'AN & TAJWID BERWARNA (LINE-HEIGHT 2.4)          */
+        /* ===================================================================== */
+        #quran-reader-view {
+            --arabic-font-size: 26px;
+        }
+        .arabic-text {
+            font-family: 'Amiri', serif;
+            font-size: var(--arabic-font-size, 26px);
+            line-height: 2.4 !important;
+            word-spacing: 0.1em;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+            direction: rtl;
+            text-align: right;
+            font-feature-settings: "kern" 1, "liga" 1;
+        }
+        .arabic-text.bismillah-center {
+            text-align: center;
+        }
+        .arabic-text .end {
+            color: #059669;
+            font-size: 0.8em;
+            margin-right: 0.25rem;
+            opacity: 0.9;
+        }
+        html.dark .arabic-text .end {
+            color: #34d399;
+        }
+
+        /* Pewarnaan Standar Mushaf Tajwid (Quran.com API & Fallback Offline) */
+        /* 1. Qalqalah -> Biru */
+        tajweed.qalaqah { color: #0284c7; }
+        html.dark tajweed.qalaqah { color: #38bdf8; }
+
+        /* 2. Ghunnah & Idgham Bighunnah / Syafawi / Mutajanisayn / Mutaqaribayn -> Hijau */
+        tajweed.ghunnah,
+        tajweed.idgham_ghunnah,
+        tajweed.idgham_shafawi,
+        tajweed.idgham_mutajanisayn,
+        tajweed.idgham_mutaqaribayn { color: #16a34a; }
+        html.dark tajweed.ghunnah,
+        html.dark tajweed.idgham_ghunnah,
+        html.dark tajweed.idgham_shafawi,
+        html.dark tajweed.idgham_mutajanisayn,
+        html.dark tajweed.idgham_mutaqaribayn { color: #4ade80; }
+
+        /* 3. Ikhfa & Iqlab -> Oranye */
+        tajweed.ikhafa,
+        tajweed.ikhafa_shafawi,
+        tajweed.iqlab { color: #ea580c; }
+        html.dark tajweed.ikhafa,
+        html.dark tajweed.ikhafa_shafawi,
+        html.dark tajweed.iqlab { color: #fb923c; }
+
+        /* 4. Mad (Panjang) -> Ungu */
+        tajweed.madda_normal,
+        tajweed.madda_permissible,
+        tajweed.madda_obligatory,
+        tajweed.madda_necessary { color: #9333ea; }
+        html.dark tajweed.madda_normal,
+        html.dark tajweed.madda_permissible,
+        html.dark tajweed.madda_obligatory,
+        html.dark tajweed.madda_necessary { color: #c084fc; }
+
+        /* 5. Huruf Diam / Hamzah Washal / Lam Syamsiyah / Idgham Bilaghunnah -> Abu-abu */
+        tajweed.ham_wasl,
+        tajweed.laam_shamsiyah,
+        tajweed.slnt,
+        tajweed.idgham_wo_ghunnah { color: #94a3b8; }
+        html.dark tajweed.ham_wasl,
+        html.dark tajweed.laam_shamsiyah,
+        html.dark tajweed.slnt,
+        html.dark tajweed.idgham_wo_ghunnah { color: #64748b; }
+
+        .tajweed-off tajweed { color: inherit !important; }
+
+        /* Header Sticky & Badge Koneksi */
+        .khat-btn.active {
+            background: linear-gradient(135deg, #10b981, #0d9488);
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+        }
+
+        /* Sorotan halus untuk ayat target auto-scroll (Mulai Sesi Ini) */
+        @keyframes pulseHighlight {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35); }
+            50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+        }
+        .ayat-next-target {
+            animation: pulseHighlight 2s ease-in-out infinite;
+        }
+
+        /* Toast Notifikasi */
+        #toast-box {
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        #toast-box.toast-hidden {
+            opacity: 0;
+            transform: translate(-50%, 16px);
+            pointer-events: none;
+        }
+        #toast-box.toast-show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        /* Pengaturan Khusus Cetak PDF (A4 Formal) */
+        #print-report { display: none; }
+        @media print {
+            @page { size: A4 portrait; margin: 12mm; }
+            body {
+                background: #ffffff !important;
+                background-image: none !important;
+                color: #000000 !important;
+            }
+            #app-shell, #ambient-bg, #toast-box, #mission-modal {
+                display: none !important;
+            }
+            #print-report {
+                display: block !important;
+                width: 100% !important;
+                color: #0f172a !important;
+                font-family: 'Inter', sans-serif !important;
+            }
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 9.5px;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid #334155;
+                padding: 3.5px 4px;
+                text-align: center;
+            }
+            .print-table th {
+                background-color: #e2e8f0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                font-weight: 700;
+            }
+            .print-break-avoid {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-deep dark:text-slate-100 transition-colors duration-300">
+
+    <!-- Efek Cahaya Latar Belakang -->
+    <div id="ambient-bg" class="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[-10%] left-[-15%] w-[360px] h-[360px] bg-emerald-500/15 rounded-full blur-[100px] animate-float"></div>
+        <div class="absolute bottom-[-10%] right-[-15%] w-[360px] h-[360px] bg-amber-500/15 rounded-full blur-[100px] animate-float" style="animation-delay: 2.5s"></div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- SHELL APLIKASI MOBILE-FIRST                                           -->
+    <!-- ===================================================================== -->
+    <div id="app-shell" class="app-container relative z-10">
+
+        <!-- Loading Awal -->
+        <div id="loading-overlay" class="fixed inset-0 bg-slate-50/90 dark:bg-deep/90 z-[100] flex flex-col items-center justify-center backdrop-blur-md">
+            <div class="w-16 h-16 border-4 border-slate-300 dark:border-slate-700 border-t-emerald-500 rounded-full animate-spin mb-4"></div>
+            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-mono font-bold tracking-[0.25em] uppercase animate-pulse">Memuat Buku Ramadhan...</p>
+        </div>
+
+        <!-- HEADER STICKY -->
+        <header class="sticky top-0 z-40 glass-panel rounded-b-3xl px-4 pt-4 pb-3.5 shadow-sm">
+            <div class="flex items-center justify-between gap-2 mb-3">
+                <!-- Tombol Kembali ke Portal Siswa -->
+                <a href="index.html" class="h-9 px-3 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 hover:bg-emerald-500/15 text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 border border-slate-300/50 dark:border-white/10 text-xs font-bold flex items-center gap-1.5 transition">
+                    <i class="ph ph-arrow-left text-base"></i>
+                    <span>Portal</span>
+                </a>
+
+                <!-- Badge Status Koneksi (Tersinkron Firebase / Mode Pratinjau) -->
+                <span id="conn-badge" class="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-bold tracking-wide flex items-center gap-1.5">
+                    <span id="conn-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    <span id="conn-text">Mode Pratinjau</span>
+                </span>
+
+                <!-- Kanan: Cetak PDF & Toggle Tema -->
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="app.printPDF()" class="w-9 h-9 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-700 dark:text-emerald-300 hover:text-white border border-emerald-500/25 flex items-center justify-center transition" title="Cetak / Unduh PDF">
+                        <i class="ph ph-printer text-lg"></i>
+                    </button>
+                    <button type="button" onclick="app.toggleTheme()" class="w-9 h-9 rounded-xl bg-slate-200/70 dark:bg-slate-800/80 hover:bg-amber-500/15 text-slate-600 dark:text-slate-300 hover:text-amber-500 border border-slate-300/50 dark:border-white/10 flex items-center justify-center transition" title="Ganti Tema">
+                        <i class="ph ph-moon dark:hidden text-lg"></i>
+                        <i class="ph ph-sun hidden dark:block text-lg text-amber-400"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Identitas Siswa & Judul -->
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-2xl shadow-md shrink-0">
+                        <i class="ph-fill ph-moon-stars"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h1 class="text-sm font-extrabold font-cyber tracking-wide text-slate-800 dark:text-white truncate">BUKU RAMADHAN 1448 H</h1>
+                        <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate" id="student-name">Ahmad Fauzan</p>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span id="student-class" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">XI MIPA 1</span>
+                            <span id="student-nis" class="text-[10px] font-mono text-slate-500 dark:text-slate-400">2425.10.001</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right shrink-0">
+                    <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                        <i class="ph-fill ph-star"></i>
+                        <span id="header-stars" class="font-mono">0</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ================================================================= -->
+        <!-- TAB 1: JURNAL HARIAN (1 - 30 RAMADHAN)                            -->
+        <!-- ================================================================= -->
+        <section id="tab-jurnal" class="tab-view active px-4 pt-4 space-y-4">
+
+            <!-- Pemilih Hari 1 - 30 Horizontal -->
+            <div class="glass-panel rounded-2xl p-3">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                        <i class="ph-fill ph-calendar-star text-emerald-500"></i> Pilih Hari Ramadhan
+                    </span>
+                    <div class="flex items-center gap-2 text-[9px] font-semibold text-slate-500 dark:text-slate-400">
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Isi</span>
+                        <span class="flex items-center gap-1"><i class="ph-fill ph-star text-amber-400"></i>Misi</span>
+                        <span class="flex items-center gap-1"><i class="ph-fill ph-seal-check text-sky-500"></i>Paraf</span>
+                    </div>
+                </div>
+                <div id="day-pills-container" class="flex gap-2 overflow-x-auto no-scrollbar pb-1 snap-x">
+                    <!-- Dirender lewat JS -->
+                </div>
+            </div>
+
+            <!-- Banner Status Paraf Guru (Read-Only) -->
+            <div id="paraf-banner" class="hidden rounded-2xl p-3.5 bg-sky-500/15 border border-sky-500/30 flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-sky-500 text-white flex items-center justify-center text-xl shrink-0 mt-0.5">
+                    <i class="ph-fill ph-seal-check"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs font-extrabold text-sky-700 dark:text-sky-300">Sudah Diparaf Guru</p>
+                    <p id="paraf-note" class="text-[11px] text-sky-700/90 dark:text-sky-200/90 leading-relaxed">Jurnal hari ini telah diperiksa dan diverifikasi oleh guru.</p>
+                </div>
+            </div>
+
+            <!-- 1. STATUS PUASA -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                    <i class="ph-fill ph-sun-horizon text-base"></i> Status Puasa • Hari ke-<span class="active-day-num">1</span>
+                </h2>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" data-puasa="penuh" onclick="app.setPuasa('penuh')" class="puasa-card p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/60 flex flex-col items-center gap-1.5 transition active:scale-95">
+                        <i class="ph-fill ph-check-circle text-2xl text-emerald-500"></i>
+                        <span class="text-[11px] font-bold leading-tight text-center">Puasa Penuh</span>
+                    </button>
+                    <button type="button" data-puasa="setengah" onclick="app.setPuasa('setengah')" class="puasa-card p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/60 flex flex-col items-center gap-1.5 transition active:scale-95">
+                        <i class="ph-fill ph-clock-afternoon text-2xl text-amber-500"></i>
+                        <span class="text-[11px] font-bold leading-tight text-center">Setengah Hari</span>
+                    </button>
+                    <button type="button" data-puasa="halangan" onclick="app.setPuasa('halangan')" class="puasa-card p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/60 flex flex-col items-center gap-1.5 transition active:scale-95">
+                        <i class="ph-fill ph-prohibit text-2xl text-rose-500"></i>
+                        <span class="text-[11px] font-bold leading-tight text-center">Berhalangan</span>
+                    </button>
+                </div>
+                <div id="puasa-alasan-wrap" class="hidden pt-1">
+                    <input type="text" id="input-puasa-alasan" placeholder="Tulis alasan singkat (mis. Sakit / Haid / Safar)..." class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-white/80 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 outline-none">
+                </div>
+            </div>
+
+            <!-- 2. SHOLAT WAJIB 5 WAKTU -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                    <i class="ph-fill ph-mosque text-base"></i> Sholat Wajib 5 Waktu
+                </h2>
+                <div id="sholat-wajib-list" class="space-y-2">
+                    <!-- Dirender lewat JS -->
+                </div>
+            </div>
+
+            <!-- 3. SHOLAT SUNNAH -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-400 flex items-center gap-2">
+                    <i class="ph-fill ph-hands-praying text-base"></i> Sholat Sunnah
+                </h2>
+                <div id="sholat-sunnah-list" class="flex flex-wrap gap-2">
+                    <!-- Dirender lewat JS -->
+                </div>
+            </div>
+
+            <!-- 4. TADARUS AL-QUR'AN HARIAN -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                        <i class="ph-fill ph-book-open-text text-base"></i> Tadarus Al-Qur'an
+                    </h2>
+                    <button type="button" onclick="app.switchTab('quran')" class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 text-[10px] font-bold flex items-center gap-1 transition">
+                        <i class="ph ph-book-bookmark"></i> Buka Al-Qur'an
+                    </button>
+                </div>
+
+                <!-- Saran Otomatis Lanjutan Sesi Tadarus (Muncul jika ada lastBookmark) -->
+                <div id="jurnal-tadarus-hint" class="hidden p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-2">
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                            <i class="ph-fill ph-bookmark-simple"></i> Lanjutan Sesi Berikutnya
+                        </p>
+                        <p id="jurnal-tadarus-hint-text" class="text-[11px] text-slate-600 dark:text-slate-300 truncate"></p>
+                    </div>
+                    <button type="button" onclick="app.applyBookmarkToJurnal()" class="px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-extrabold shrink-0 transition">
+                        Pakai
+                    </button>
+                </div>
+
+                <div class="space-y-2.5">
+                    <input type="text" id="input-tadarus-surah" placeholder="Nama Surah (contoh: Al-Baqarah)" class="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium bg-white/80 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 outline-none">
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">Ayat Awal</label>
+                            <input type="number" id="input-tadarus-awal" min="1" placeholder="1" oninput="app.calcTadarusCount()" class="w-full px-3 py-2 rounded-xl text-xs font-mono font-bold text-center bg-white/80 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1">Ayat Akhir</label>
+                            <input type="number" id="input-tadarus-akhir" min="1" placeholder="20" oninput="app.calcTadarusCount()" class="w-full px-3 py-2 rounded-xl text-xs font-mono font-bold text-center bg-white/80 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mb-1">Jml Ayat</label>
+                            <input type="number" id="input-tadarus-jumlah" min="0" placeholder="0" class="w-full px-3 py-2 rounded-xl text-xs font-mono font-extrabold text-center bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. CATATAN SIRAMAN ROHANI / KULTUM -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                    <i class="ph-fill ph-microphone-stage text-base"></i> Catatan Kultum / Ceramah
+                </h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="input-kultum-penceramah" placeholder="Penceramah / Sumber" class="w-full px-3 py-2.5 rounded-xl text-xs bg-white/80 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 outline-none">
+                    <select id="input-kultum-tempat" class="w-full px-3 py-2.5 rounded-xl text-xs font-medium bg-white/80 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 outline-none">
+                        <option value="Masjid">Masjid / Musholla</option>
+                        <option value="Sekolah">Sekolah / Pesantren Kilat</option>
+                        <option value="Online">Kajian Online / TV</option>
+                        <option value="Rumah">Rumah / Keluarga</option>
+                    </select>
+                </div>
+                <input type="text" id="input-kultum-judul" placeholder="Judul / Tema Kultum (opsional)" class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-white/80 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 outline-none">
+                <textarea id="input-kultum-ringkasan" rows="3" placeholder="Tulis ringkasan hikmah atau pelajaran penting yang didapat hari ini..." class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-white/80 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 outline-none resize-none leading-relaxed"></textarea>
+            </div>
+
+            <!-- 6. KEBAIKAN HARIAN -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                    <i class="ph-fill ph-heart text-base"></i> Kebaikan Harian
+                </h2>
+                <div id="kebaikan-checklist" class="flex flex-wrap gap-2">
+                    <!-- Tag cepat dirender lewat JS -->
+                </div>
+                <input type="text" id="input-kebaikan-lain" placeholder="Catatan kebaikan tambahan lainnya hari ini..." class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-white/80 dark:bg-slate-900/70 border border-slate-300 dark:border-slate-700 focus:border-emerald-500 outline-none">
+            </div>
+
+            <!-- TOMBOL SIMPAN JURNAL -->
+            <button type="button" id="btn-save-jurnal" onclick="app.saveCurrentDay()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold text-sm tracking-wide shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition flex items-center justify-center gap-2">
+                <i id="save-icon" class="ph-fill ph-floppy-disk text-lg"></i>
+                <span id="save-label">Simpan Jurnal Hari ke-1</span>
+            </button>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 2: AL-QUR'AN & TADARUS LANGSUNG (2 KHAT + 1 KLIK LANJUT)      -->
+        <!-- ================================================================= -->
+        <section id="tab-quran" class="tab-view px-4 pt-4 space-y-4">
+
+            <!-- Kartu Progres Khatam -->
+            <div class="rounded-3xl p-4 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-lg relative overflow-hidden">
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-amber-300/20 rounded-full blur-2xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-100">Progres Khatam Al-Qur'an</span>
+                        <span id="quran-pct-badge" class="px-2.5 py-0.5 rounded-full bg-white/20 text-xs font-mono font-bold">0.0%</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5 mb-2">
+                        <span id="quran-total-ayat" class="text-3xl font-black font-mono">0</span>
+                        <span class="text-xs text-emerald-100">/ 6.236 ayat</span>
+                    </div>
+                    <div class="w-full h-2.5 rounded-full bg-black/25 overflow-hidden">
+                        <div id="quran-progress-bar" class="h-full rounded-full bg-gradient-to-r from-amber-300 to-yellow-400 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kartu Mencolok: Lanjutkan Tadarus (Smart Bookmark) -->
+            <div id="smart-bookmark-card" class="hidden glass-panel rounded-3xl p-4 border-2 border-amber-400/60 bg-gradient-to-r from-amber-500/15 via-emerald-500/10 to-teal-500/10 shadow-md">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0 space-y-0.5">
+                        <span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                            <i class="ph-fill ph-bookmark-simple"></i> Lanjutkan Tadarus
+                        </span>
+                        <p id="smart-bookmark-last" class="text-xs font-bold text-slate-800 dark:text-white truncate">Terakhir: Al-Fatihah Ayat 7</p>
+                        <p id="smart-bookmark-next" class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 truncate">→ Lanjut otomatis mulai Al-Baqarah Ayat 1</p>
+                    </div>
+                    <button type="button" onclick="app.continueLastSurah()" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-extrabold text-xs shadow-md shrink-0 flex items-center gap-1.5 transition active:scale-95">
+                        <span>Lanjutkan</span>
+                        <i class="ph-bold ph-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAMPILAN DAFTAR SURAH -->
+            <div id="quran-list-view" class="space-y-3">
+                <div class="relative">
+                    <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
+                    <input type="text" id="quran-search" oninput="app.filterSurahList()" placeholder="Cari surah (contoh: Yasin, Al-Kahfi, Al-Ikhlas)..." class="w-full pl-10 pr-4 py-3 rounded-2xl text-xs font-medium glass-panel outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div id="quran-api-note" class="hidden text-[11px] px-3 py-2 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25 flex items-center gap-2">
+                    <i class="ph-fill ph-wifi-slash text-sm shrink-0"></i>
+                    <span>Menampilkan 6 surah offline bawaan (sudah mendukung Tajwid Berwarna). Aktifkan internet untuk memuat 114 surah lengkap.</span>
+                </div>
+
+                <div id="surah-list-container" class="space-y-2">
+                    <!-- Daftar surah dirender lewat JS -->
+                </div>
+            </div>
+
+            <!-- TAMPILAN BACA SURAH -->
+            <div id="quran-reader-view" class="hidden space-y-3">
+                <!-- Header Sticky Reader: Kembali, Pemilih 2 Versi Khat, Ukuran Huruf A-/A+, Terjemahan -->
+                <div class="glass-panel rounded-2xl p-3 space-y-2.5 sticky top-[118px] z-30 shadow-md">
+                    <div class="flex items-center justify-between gap-2">
+                        <button type="button" onclick="app.closeSurahReader()" class="px-2.5 py-1.5 rounded-xl bg-slate-200/70 dark:bg-slate-800 hover:bg-emerald-500/15 text-xs font-bold flex items-center gap-1 shrink-0 transition">
+                            <i class="ph ph-arrow-left"></i> Surah
+                        </button>
+                        <div class="text-center min-w-0 flex-1">
+                            <h3 id="reader-surah-title" class="text-xs font-extrabold truncate">Al-Fatihah</h3>
+                            <p id="reader-surah-meta" class="text-[10px] text-slate-500 dark:text-slate-400">7 Ayat • Mekah</p>
+                        </div>
+                        <button type="button" id="btn-toggle-trans" onclick="app.toggleTranslation()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold shrink-0 transition">
+                            Terjemah: ON
+                        </button>
+                    </div>
+
+                    <!-- Segmented Switch 2 Versi Khat + Kontrol Ukuran Huruf A- / A+ -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200/70 dark:border-slate-700/60">
+                        <!-- Pemilih 2 Versi Khat -->
+                        <div class="inline-flex p-0.5 rounded-xl bg-slate-200/80 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700">
+                            <button type="button" id="btn-khat-indo" onclick="app.setKhatMode('indo')" class="khat-btn active px-2.5 py-1 rounded-lg text-[10px] font-extrabold text-slate-600 dark:text-slate-300 transition">
+                                Mushaf Indonesia
+                            </button>
+                            <button type="button" id="btn-khat-tajwid" onclick="app.setKhatMode('tajwid')" class="khat-btn px-2.5 py-1 rounded-lg text-[10px] font-extrabold text-slate-600 dark:text-slate-300 flex items-center gap-1 transition">
+                                <i class="ph-fill ph-palette text-xs"></i>
+                                <span>Utsmani Tajwid</span>
+                            </button>
+                        </div>
+
+                        <!-- Kontrol Ukuran Huruf A- / A+ -->
+                        <div class="flex items-center gap-1">
+                            <button type="button" id="btn-arab-dec" onclick="app.changeArabicSize(-2)" class="h-7 px-2 rounded-lg bg-slate-200/80 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white text-slate-700 dark:text-slate-200 font-extrabold text-[11px] transition active:scale-95" title="Perkecil Huruf Arab">
+                                A-
+                            </button>
+                            <span id="arabic-size-label" class="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 w-8 text-center">26px</span>
+                            <button type="button" id="btn-arab-inc" onclick="app.changeArabicSize(2)" class="h-7 px-2 rounded-lg bg-slate-200/80 dark:bg-slate-800 hover:bg-emerald-500 hover:text-white text-slate-700 dark:text-slate-200 font-extrabold text-[11px] transition active:scale-95" title="Perbesar Huruf Arab">
+                                A+
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Legenda Warna Tajwid (Hanya tampil saat mode Utsmani Tajwid aktif) -->
+                <div id="tajwid-legend-card" class="hidden glass-panel rounded-2xl px-3.5 py-2.5 border border-emerald-500/20">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <i class="ph-fill ph-sparkle text-amber-500"></i> Panduan Warna Tajwid
+                        </span>
+                        <span id="tajwid-source-badge" class="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">Utsmani Tajwid</span>
+                    </div>
+                    <div class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#0284c7] dark:bg-[#38bdf8]"></span>Qalqalah</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#16a34a] dark:bg-[#4ade80]"></span>Ghunnah / Idgham</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#ea580c] dark:bg-[#fb923c]"></span>Ikhfa &amp; Iqlab</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#9333ea] dark:bg-[#c084fc]"></span>Mad (Panjang)</span>
+                        <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#94a3b8]"></span>Huruf Diam / Bilaghunnah</span>
+                    </div>
+                </div>
+
+                <!-- Info Cara Pakai 1 Klik + Tombol Reset Penanda Surah -->
+                <div class="flex items-center justify-between gap-2 px-1">
+                    <p class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                        <i class="ph-fill ph-info text-emerald-500 mr-0.5"></i> Cukup klik <strong>Selesai Sampai Ayat Ini</strong> di akhir sesi bacaanmu.
+                    </p>
+                    <button type="button" id="btn-reset-surah" onclick="app.resetCurrentSurahProgress()" class="hidden text-[10px] font-bold text-rose-500 hover:text-rose-600 underline shrink-0 transition">
+                        Reset Penanda Surah
+                    </button>
+                </div>
+
+                <!-- Header Bismillah (Otomatis tampil kecuali Al-Fatihah & At-Taubah) -->
+                <div id="reader-bismillah-card" class="hidden glass-panel rounded-3xl px-4 py-2.5 border border-emerald-500/25 bg-emerald-500/5">
+                    <p id="reader-bismillah-text" class="arabic-text bismillah-center text-emerald-800 dark:text-emerald-200">
+                        بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ
+                    </p>
+                </div>
+
+                <!-- Daftar Ayat -->
+                <div id="reader-ayat-container" class="space-y-3.5">
+                    <!-- Ayat dirender lewat JS -->
+                </div>
+
+                <!-- Tombol Catat 1 Surah Selesai -->
+                <button type="button" id="btn-log-full-surah" onclick="app.logFullSurah()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-extrabold text-xs shadow-md flex items-center justify-center gap-2 transition active:scale-95">
+                    <i class="ph-fill ph-check-fat text-base"></i>
+                    <span>Selesai 1 Surah Penuh (Hari ke-<span class="active-day-num">1</span>)</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 3: 30 MISI HARIAN (GAMIFIKASI POSITIF)                        -->
+        <!-- ================================================================= -->
+        <section id="tab-misi" class="tab-view px-4 pt-4 space-y-4">
+
+            <!-- Counter Bintang & Lentera -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="glass-panel rounded-3xl p-4 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center text-2xl shrink-0">
+                        <i class="ph-fill ph-star"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Bintang</p>
+                        <p id="misi-stars-count" class="text-2xl font-black font-mono text-amber-600 dark:text-amber-400">0</p>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-3xl p-4 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center text-2xl shrink-0">
+                        <i class="ph-fill ph-lamp"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">Lentera</p>
+                        <p class="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400"><span id="misi-lantern-count">0</span><span class="text-xs text-slate-400">/30</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-1 flex items-center justify-between">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">30 Misi Akhlak &amp; Wawasan Ramadhan</h2>
+                <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Klik hari untuk mulai</span>
+            </div>
+
+            <!-- Grid 30 Misi -->
+            <div id="missions-grid" class="grid grid-cols-2 gap-2.5">
+                <!-- Dirender lewat JS -->
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 4: LENCANA & REKAP PRIBADI                                    -->
+        <!-- ================================================================= -->
+        <section id="tab-lencana" class="tab-view px-4 pt-4 space-y-4">
+
+            <!-- Ringkasan Statistik Pribadi -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                        <i class="ph-fill ph-chart-pie-slice text-base"></i> Rekap Ibadah Pribadi
+                    </h2>
+                    <span class="text-[10px] font-semibold text-slate-400">Refleksi Diri</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                        <p id="stat-filled" class="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">0</p>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Hari Terisi</p>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-center">
+                        <p id="stat-puasa" class="text-xl font-black font-mono text-teal-600 dark:text-teal-400">0</p>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Puasa Penuh</p>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-center">
+                        <p id="stat-sholat" class="text-xl font-black font-mono text-sky-600 dark:text-sky-400">0%</p>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Sholat Wajib</p>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-center">
+                        <p id="stat-jamaah" class="text-xl font-black font-mono text-indigo-600 dark:text-indigo-400">0%</p>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Berjamaah</p>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
+                        <p id="stat-ayat" class="text-xl font-black font-mono text-amber-600 dark:text-amber-400">0</p>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Ayat Tadarus</p>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 text-center">
+                        <p id="stat-misi" class="text-xl font-black font-mono text-fuchsia-600 dark:text-fuchsia-400">0</p>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">Misi Selesai</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Koleksi 12 Lencana Apresiasi -->
+            <div class="glass-panel rounded-3xl p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                        <i class="ph-fill ph-medal text-base"></i> Koleksi Lencana (<span id="badge-unlocked-count">0</span>/12)
+                    </h2>
+                </div>
+                <div id="badges-grid" class="grid grid-cols-2 gap-2.5">
+                    <!-- 12 Badge dirender lewat JS -->
+                </div>
+            </div>
+
+            <!-- Tombol Besar Cetak / Unduh PDF -->
+            <button type="button" onclick="app.printPDF()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-900 dark:from-emerald-500 dark:to-teal-600 text-white font-extrabold text-sm shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2.5">
+                <i class="ph-fill ph-file-pdf text-xl"></i>
+                <span>Cetak / Unduh Buku Ramadhan (PDF)</span>
+            </button>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- BOTTOM NAVIGATION (4 TAB)                                         -->
+        <!-- ================================================================= -->
+        <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] glass-panel border-t border-white/25 flex justify-around py-2.5 pb-5 z-40 rounded-t-3xl">
+            <button type="button" data-nav="jurnal" onclick="app.switchTab('jurnal')" class="nav-item active flex flex-col items-center gap-1 w-1/4 py-1">
+                <i class="ph-fill ph-notebook text-2xl transition-transform"></i>
+                <span class="text-[10px] font-bold tracking-wide">Jurnal</span>
+            </button>
+            <button type="button" data-nav="quran" onclick="app.switchTab('quran')" class="nav-item flex flex-col items-center gap-1 w-1/4 py-1">
+                <i class="ph-fill ph-book-open-text text-2xl transition-transform"></i>
+                <span class="text-[10px] font-bold tracking-wide">Al-Qur'an</span>
+            </button>
+            <button type="button" data-nav="misi" onclick="app.switchTab('misi')" class="nav-item flex flex-col items-center gap-1 w-1/4 py-1">
+                <i class="ph-fill ph-sparkle text-2xl transition-transform"></i>
+                <span class="text-[10px] font-bold tracking-wide">Misi</span>
+            </button>
+            <button type="button" data-nav="lencana" onclick="app.switchTab('lencana')" class="nav-item flex flex-col items-center gap-1 w-1/4 py-1">
+                <i class="ph-fill ph-medal text-2xl transition-transform"></i>
+                <span class="text-[10px] font-bold tracking-wide">Lencana</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL DETAIL MISI HARIAN                                              -->
+    <!-- ===================================================================== -->
+    <div id="mission-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-[460px] max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-slate-200 dark:border-slate-700 p-5 space-y-4 shadow-2xl">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <span id="mm-day-badge" class="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold uppercase">Hari ke-1</span>
+                    <h3 id="mm-title" class="text-base font-extrabold text-slate-800 dark:text-white mt-1">Judul Misi</h3>
+                </div>
+                <button type="button" onclick="app.closeMissionModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 flex items-center justify-center shrink-0">
+                    <i class="ph ph-x text-base"></i>
+                </button>
+            </div>
+
+            <!-- Hikmah Singkat -->
+            <div class="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                <p class="text-[10px] font-extrabold uppercase text-emerald-700 dark:text-emerald-300 mb-1 flex items-center gap-1">
+                    <i class="ph-fill ph-lightbulb"></i> Hikmah Ramadhan
+                </p>
+                <p id="mm-hikmah" class="text-xs leading-relaxed text-slate-700 dark:text-slate-200"></p>
+            </div>
+
+            <!-- Studi Kasus Akhlak Pelajar -->
+            <div class="space-y-2">
+                <p class="text-[10px] font-extrabold uppercase text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <i class="ph-fill ph-compass"></i> Langkah 1: Pilih Sikap Akhlakmu
+                </p>
+                <p id="mm-case-text" class="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-relaxed"></p>
+                <div id="mm-case-options" class="space-y-2"></div>
+                <p id="mm-case-feedback" class="hidden text-[11px] font-semibold px-3 py-2 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-200"></p>
+            </div>
+
+            <!-- Kuis Mini Islami -->
+            <div class="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <p class="text-[10px] font-extrabold uppercase text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                    <i class="ph-fill ph-question"></i> Langkah 2: Kuis Mini Ramadhan
+                </p>
+                <p id="mm-quiz-q" class="text-xs font-bold text-slate-800 dark:text-white leading-relaxed"></p>
+                <div id="mm-quiz-options" class="space-y-2"></div>
+                <div id="mm-quiz-feedback" class="hidden text-[11px] px-3 py-2.5 rounded-xl leading-relaxed"></div>
+            </div>
+
+            <!-- Tombol Klaim -->
+            <button type="button" id="btn-claim-mission" onclick="app.claimMission()" disabled class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-extrabold text-xs shadow-md flex items-center justify-center gap-2 transition">
+                <i class="ph-fill ph-star text-base"></i>
+                <span id="claim-btn-text">Selesaikan Langkah 1 &amp; 2 untuk Klaim</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notifikasi -->
+    <div id="toast-box" class="toast-hidden fixed bottom-24 left-1/2 z-[60] px-4 py-2.5 rounded-full bg-slate-900/95 dark:bg-white/95 text-white dark:text-slate-900 text-xs font-bold shadow-xl whitespace-nowrap max-w-[90vw] truncate">
+        <span id="toast-msg">Tersimpan</span>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- DOKUMEN CETAK PDF A4 FORMAL (@media print)                            -->
+    <!-- ===================================================================== -->
+    <div id="print-report">
+        <!-- Dirender dinamis sebelum window.print() -->
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- LOGIKA APLIKASI & FIREBASE v11.6.1 MODULAR                            -->
+    <!-- ===================================================================== -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // ---------------------------------------------------------------------
+        // 1. KONSTANTA DATA: SHOLAT, KEBAIKAN, FALLBACK AL-QUR'AN TAJWID, MISI
+        // ---------------------------------------------------------------------
+        const DEMO_STORAGE_KEY = 'sakti_demo_ramadhan_1448';
+        const ARABIC_SIZE_KEY = 'sakti_quran_arabic_size';
+        const KHAT_PREF_KEY = 'sakti_quran_khat'; // 'indo' (default) | 'tajwid'
+        const TOTAL_QURAN_AYAT = 6236;
+
+        const SHOLAT_WAJIB = [
+            { key: 'subuh',   label: 'Subuh' },
+            { key: 'dzuhur',  label: 'Dzuhur' },
+            { key: 'ashar',   label: 'Ashar' },
+            { key: 'maghrib', label: 'Maghrib' },
+            { key: 'isya',    label: 'Isya' }
+        ];
+
+        const SHOLAT_SUNNAH = [
+            { key: 'tarawih', label: 'Tarawih' },
+            { key: 'witir',   label: 'Witir' },
+            { key: 'dhuha',   label: 'Dhuha' },
+            { key: 'tahajud', label: 'Tahajud' },
+            { key: 'rawatib', label: 'Rawatib' }
+        ];
+
+        const KEBAIKAN_ITEMS = [
+            { key: 'ortu',    label: 'Bantu Orang Tua' },
+            { key: 'sedekah', label: 'Sedekah / Infak' },
+            { key: 'teman',   label: 'Menolong Teman' },
+            { key: 'lisan',   label: 'Jaga Lisan & Medsos' },
+            { key: 'rumah',   label: 'Rapikan Rumah' }
+        ];
+
+        // 6 Surah Fallback Offline lengkap dengan tag <tajweed> agar Tajwid Berwarna langsung aktif saat offline
+        const FALLBACK_SURAHS = [
+            {
+                nomor: 1, nama: 'الفاتحة', namaLatin: 'Al-Fatihah', jumlahAyat: 7, tempatTurun: 'Mekah', arti: 'Pembukaan',
+                ayat: [
+                    {
+                        nomorAyat: 1,
+                        teksArab: 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ',
+                        teksTajwid: 'بِسْمِ <tajweed class="ham_wasl">ٱ</tajweed>للَّهِ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>رَّحْمَ<tajweed class="madda_normal">ـٰ</tajweed>نِ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>رَّحِ<tajweed class="madda_permissible">ي</tajweed>مِ',
+                        teksLatin: 'Bismillāhir-raḥmānir-raḥīm(i).',
+                        teksIndonesia: 'Dengan nama Allah Yang Maha Pengasih lagi Maha Penyayang.'
+                    },
+                    {
+                        nomorAyat: 2,
+                        teksArab: 'اَلْحَمْدُ لِلّٰهِ رَبِّ الْعٰلَمِيْنَۙ',
+                        teksTajwid: 'ٱلْحَمْدُ لِلَّهِ رَبِّ <tajweed class="ham_wasl">ٱ</tajweed>لْعَ<tajweed class="madda_normal">ـٰ</tajweed>لَمِ<tajweed class="madda_permissible">ي</tajweed>نَ',
+                        teksLatin: 'Al-ḥamdu lillāhi rabbil-‘ālamīn(a).',
+                        teksIndonesia: 'Segala puji bagi Allah, Tuhan semesta alam,'
+                    },
+                    {
+                        nomorAyat: 3,
+                        teksArab: 'الرَّحْمٰنِ الرَّحِيْمِۙ',
+                        teksTajwid: 'ٱ<tajweed class="laam_shamsiyah">ل</tajweed>رَّحْمَ<tajweed class="madda_normal">ـٰ</tajweed>نِ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>رَّحِ<tajweed class="madda_permissible">ي</tajweed>مِ',
+                        teksLatin: 'Ar-raḥmānir-raḥīm(i).',
+                        teksIndonesia: 'Yang Maha Pengasih lagi Maha Penyayang,'
+                    },
+                    {
+                        nomorAyat: 4,
+                        teksArab: 'مٰلِكِ يَوْمِ الدِّيْنِۗ',
+                        teksTajwid: 'مَ<tajweed class="madda_normal">ـٰ</tajweed>لِكِ يَوْمِ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>دِّ<tajweed class="madda_permissible">ي</tajweed>نِ',
+                        teksLatin: 'Māliki yaumid-dīn(i).',
+                        teksIndonesia: 'Pemilik hari Pembalasan.'
+                    },
+                    {
+                        nomorAyat: 5,
+                        teksArab: 'اِيَّاكَ نَعْبُدُ وَاِيَّاكَ نَسْتَعِيْنُۗ',
+                        teksTajwid: 'إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِ<tajweed class="madda_permissible">ي</tajweed>نُ',
+                        teksLatin: 'Iyyāka na‘budu wa iyyāka nasta‘īn(u).',
+                        teksIndonesia: 'Hanya kepada Engkaulah kami menyembah dan hanya kepada Engkaulah kami memohon pertolongan.'
+                    },
+                    {
+                        nomorAyat: 6,
+                        teksArab: 'اِهْدِنَا الصِّرَاطَ الْمُسْتَقِيْمَۙ',
+                        teksTajwid: 'ٱهْدِنَا <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>صِّرَ<tajweed class="madda_normal">ٰ</tajweed>طَ <tajweed class="ham_wasl">ٱ</tajweed>لْمُسْتَقِ<tajweed class="madda_permissible">ي</tajweed>مَ',
+                        teksLatin: 'Ihdinaṣ-ṣirāṭal-mustaqīm(a).',
+                        teksIndonesia: 'Bimbinglah kami ke jalan yang lurus,'
+                    },
+                    {
+                        nomorAyat: 7,
+                        teksArab: 'صِرَاطَ الَّذِيْنَ اَنْعَمْتَ عَلَيْهِمْ ەۙ غَيْرِ الْمَغْضُوْبِ عَلَيْهِمْ وَلَا الضَّاۤلِّيْنَ',
+                        teksTajwid: 'صِرَ<tajweed class="madda_normal">ٰ</tajweed>طَ <tajweed class="ham_wasl">ٱ</tajweed>لَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ <tajweed class="ham_wasl">ٱ</tajweed>لْمَغْضُوبِ عَلَيْهِمْ وَلَا <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>ضّ<tajweed class="madda_necessary">َآ</tajweed>لِّ<tajweed class="madda_permissible">ي</tajweed>نَ',
+                        teksLatin: 'Ṣirāṭal-lażīna an‘amta ‘alaihim gairil-magḍūbi ‘alaihim wa laḍ-ḍāllīn(a).',
+                        teksIndonesia: '(yaitu) jalan orang-orang yang telah Engkau beri nikmat, bukan (jalan) mereka yang dimurkai dan bukan (pula jalan) orang-orang yang sesat.'
+                    }
+                ]
+            },
+            {
+                nomor: 103, nama: 'العصر', namaLatin: 'Al-‘Asr', jumlahAyat: 3, tempatTurun: 'Mekah', arti: 'Masa',
+                ayat: [
+                    {
+                        nomorAyat: 1,
+                        teksArab: 'وَالْعَصْرِۙ',
+                        teksTajwid: 'وَ<tajweed class="ham_wasl">ٱ</tajweed>لْعَصْرِ',
+                        teksLatin: 'Wal-‘aṣr(i).',
+                        teksIndonesia: 'Demi masa,'
+                    },
+                    {
+                        nomorAyat: 2,
+                        teksArab: 'اِنَّ الْاِنْسَانَ لَفِيْ خُسْرٍۙ',
+                        teksTajwid: 'إِ<tajweed class="ghunnah">نَّ</tajweed> <tajweed class="ham_wasl">ٱ</tajweed>لْإِ<tajweed class="ikhafa">نس</tajweed>َ<tajweed class="madda_normal">ـٰ</tajweed>نَ لَفِى خُسْرٍ',
+                        teksLatin: 'Innal-insāna lafī khusr(in).',
+                        teksIndonesia: 'sesungguhnya manusia benar-benar berada dalam kerugian,'
+                    },
+                    {
+                        nomorAyat: 3,
+                        teksArab: 'اِلَّا الَّذِيْنَ اٰمَنُوْا وَعَمِلُوا الصّٰلِحٰتِ وَتَوَاصَوْا بِالْحَقِّ ەۙ وَتَوَاصَوْا بِالصَّبْرِ',
+                        teksTajwid: 'إِلَّا <tajweed class="ham_wasl">ٱ</tajweed>لَّذِينَ ءَامَنُو<tajweed class="slnt">اْ</tajweed> وَعَمِلُو<tajweed class="slnt">اْ</tajweed> <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>صَّ<tajweed class="madda_normal">ـٰ</tajweed>لِحَ<tajweed class="madda_normal">ـٰ</tajweed>تِ وَتَوَاصَوْ<tajweed class="slnt">اْ</tajweed> بِ<tajweed class="ham_wasl">ٱ</tajweed>لْحَقِّ وَتَوَاصَوْ<tajweed class="slnt">اْ</tajweed> بِ<tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>صَّ<tajweed class="qalaqah">بْ</tajweed>رِ',
+                        teksLatin: 'Illal-lażīna āmanū wa ‘amiluṣ-ṣāliḥāti wa tawāṣau bil-ḥaqqi wa tawāṣau biṣ-ṣabr(i).',
+                        teksIndonesia: 'kecuali orang-orang yang beriman dan beramal saleh serta saling menasihati untuk kebenaran dan saling menasihati untuk kesabaran.'
+                    }
+                ]
+            },
+            {
+                nomor: 108, nama: 'الكوثر', namaLatin: 'Al-Kausar', jumlahAyat: 3, tempatTurun: 'Mekah', arti: 'Nikmat yang Banyak',
+                ayat: [
+                    {
+                        nomorAyat: 1,
+                        teksArab: 'اِنَّآ اَعْطَيْنٰكَ الْكَوْثَرَۗ',
+                        teksTajwid: 'إِ<tajweed class="ghunnah">نّ</tajweed><tajweed class="madda_obligatory">َآ</tajweed> أَعْطَيْنَ<tajweed class="madda_normal">ـٰ</tajweed>كَ <tajweed class="ham_wasl">ٱ</tajweed>لْكَوْثَرَ',
+                        teksLatin: 'Innā a‘ṭainākal-kauṡar(a).',
+                        teksIndonesia: 'Sesungguhnya Kami telah memberimu nikmat yang banyak.'
+                    },
+                    {
+                        nomorAyat: 2,
+                        teksArab: 'فَصَلِّ لِرَبِّكَ وَانْحَرْۗ',
+                        teksTajwid: 'فَصَلِّ لِرَبِّكَ وَ<tajweed class="ham_wasl">ٱ</tajweed>نْحَرْ',
+                        teksLatin: 'Faṣalli lirabbika wanḥar.',
+                        teksIndonesia: 'Maka, laksanakanlah sholat karena Tuhanmu dan berkurbanlah!'
+                    },
+                    {
+                        nomorAyat: 3,
+                        teksArab: 'اِنَّ شَانِئَكَ هُوَ الْاَبْتَرُ',
+                        teksTajwid: 'إِ<tajweed class="ghunnah">نَّ</tajweed> شَانِئَكَ هُوَ <tajweed class="ham_wasl">ٱ</tajweed>لْأَ<tajweed class="qalaqah">بْ</tajweed>تَرُ',
+                        teksLatin: 'Inna syāni’aka huwal-abtar(u).',
+                        teksIndonesia: 'Sesungguhnya orang yang membencimu, dialah yang terputus (dari rahmat Allah).'
+                    }
+                ]
+            },
+            {
+                nomor: 112, nama: 'الاخلاص', namaLatin: 'Al-Ikhlas', jumlahAyat: 4, tempatTurun: 'Mekah', arti: 'Memurnikan Keesaan Allah',
+                ayat: [
+                    {
+                        nomorAyat: 1,
+                        teksArab: 'قُلْ هُوَ اللّٰهُ اَحَدٌۚ',
+                        teksTajwid: 'قُلْ هُوَ <tajweed class="ham_wasl">ٱ</tajweed>للَّهُ أَحَ<tajweed class="qalaqah">دٌ</tajweed>',
+                        teksLatin: 'Qul huwallāhu aḥad(un).',
+                        teksIndonesia: 'Katakanlah (Nabi Muhammad), "Dialah Allah Yang Maha Esa.'
+                    },
+                    {
+                        nomorAyat: 2,
+                        teksArab: 'اَللّٰهُ الصَّمَدُۚ',
+                        teksTajwid: 'ٱللَّهُ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>صَّمَ<tajweed class="qalaqah">دُ</tajweed>',
+                        teksLatin: 'Allāhuṣ-ṣamad(u).',
+                        teksIndonesia: 'Allah tempat meminta segala sesuatu.'
+                    },
+                    {
+                        nomorAyat: 3,
+                        teksArab: 'لَمْ يَلِدْ وَلَمْ يُوْلَدْۙ',
+                        teksTajwid: 'لَمْ يَلِ<tajweed class="qalaqah">دْ</tajweed> وَلَمْ يُولَ<tajweed class="qalaqah">دْ</tajweed>',
+                        teksLatin: 'Lam yalid wa lam yūlad.',
+                        teksIndonesia: 'Dia tidak beranak dan tidak pula diperanakkan,'
+                    },
+                    {
+                        nomorAyat: 4,
+                        teksArab: 'وَلَمْ يَكُنْ لَّهٗ كُفُوًا اَحَدٌ',
+                        teksTajwid: 'وَلَمْ يَكُ<tajweed class="idgham_wo_ghunnah">ن ل</tajweed>َّهُ<tajweed class="madda_normal">ۥ</tajweed> كُفُوًا أَحَ<tajweed class="qalaqah">دٌ</tajweed>',
+                        teksLatin: 'Wa lam yakul lahū kufuwan aḥad(un).',
+                        teksIndonesia: 'serta tidak ada sesuatu pun yang setara dengan-Nya."'
+                    }
+                ]
+            },
+            {
+                nomor: 113, nama: 'الفلق', namaLatin: 'Al-Falaq', jumlahAyat: 5, tempatTurun: 'Mekah', arti: 'Waktu Subuh',
+                ayat: [
+                    {
+                        nomorAyat: 1,
+                        teksArab: 'قُلْ اَعُوْذُ بِرَبِّ الْفَلَقِۙ',
+                        teksTajwid: 'قُلْ أَعُوذُ بِرَبِّ <tajweed class="ham_wasl">ٱ</tajweed>لْفَلَ<tajweed class="qalaqah">قِ</tajweed>',
+                        teksLatin: 'Qul a‘ūżu birabbil-falaq(i).',
+                        teksIndonesia: 'Katakanlah, "Aku berlindung kepada Tuhan yang menguasai subuh,'
+                    },
+                    {
+                        nomorAyat: 2,
+                        teksArab: 'مِنْ شَرِّ مَا خَلَقَۙ',
+                        teksTajwid: 'مِ<tajweed class="ikhafa">ن ش</tajweed>َرِّ مَا خَلَ<tajweed class="qalaqah">قَ</tajweed>',
+                        teksLatin: 'Min syarri mā khalaq(a).',
+                        teksIndonesia: 'dari kejahatan makhluk yang Dia ciptakan,'
+                    },
+                    {
+                        nomorAyat: 3,
+                        teksArab: 'وَمِنْ شَرِّ غَاسِقٍ اِذَا وَقَبَۙ',
+                        teksTajwid: 'وَمِ<tajweed class="ikhafa">ن ش</tajweed>َرِّ غَاسِقٍ إِذَا وَقَ<tajweed class="qalaqah">بَ</tajweed>',
+                        teksLatin: 'Wa min syarri gāsiqin iżā waqab(a).',
+                        teksIndonesia: 'dari kejahatan malam apabila telah gelap gulita,'
+                    },
+                    {
+                        nomorAyat: 4,
+                        teksArab: 'وَمِنْ شَرِّ النَّفّٰثٰتِ فِى الْعُقَدِۙ',
+                        teksTajwid: 'وَمِ<tajweed class="ikhafa">ن ش</tajweed>َرِّ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed><tajweed class="ghunnah">نَّ</tajweed>فَّ<tajweed class="madda_normal">ـٰ</tajweed>ثَ<tajweed class="madda_normal">ـٰ</tajweed>تِ فِى <tajweed class="ham_wasl">ٱ</tajweed>لْعُقَ<tajweed class="qalaqah">دِ</tajweed>',
+                        teksLatin: 'Wa min syarrin-naffāṡāti fil-‘uqad(i).',
+                        teksIndonesia: 'dari kejahatan perempuan-perempuan penyihir yang meniup pada buhul-buhul,'
+                    },
+                    {
+                        nomorAyat: 5,
+                        teksArab: 'وَمِنْ شَرِّ حَاسِدٍ اِذَا حَسَدَ',
+                        teksTajwid: 'وَمِ<tajweed class="ikhafa">ن ش</tajweed>َرِّ حَاسِدٍ إِذَا حَسَ<tajweed class="qalaqah">دَ</tajweed>',
+                        teksLatin: 'Wa min syarri ḥāsidin iżā ḥasad(a).',
+                        teksIndonesia: 'dan dari kejahatan orang yang dengki apabila dia dengki."'
+                    }
+                ]
+            },
+            {
+                nomor: 114, nama: 'الناس', namaLatin: 'An-Nas', jumlahAyat: 6, tempatTurun: 'Mekah', arti: 'Manusia',
+                ayat: [
+                    {
+                        nomorAyat: 1,
+                        teksArab: 'قُلْ اَعُوْذُ بِرَبِّ النَّاسِۙ',
+                        teksTajwid: 'قُلْ أَعُوذُ بِرَبِّ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed><tajweed class="ghunnah">نّ</tajweed>َ<tajweed class="madda_permissible">ا</tajweed>سِ',
+                        teksLatin: 'Qul a‘ūżu birabbin-nās(i).',
+                        teksIndonesia: 'Katakanlah, "Aku berlindung kepada Tuhannya manusia,'
+                    },
+                    {
+                        nomorAyat: 2,
+                        teksArab: 'مَلِكِ النَّاسِۙ',
+                        teksTajwid: 'مَلِكِ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed><tajweed class="ghunnah">نّ</tajweed>َ<tajweed class="madda_permissible">ا</tajweed>سِ',
+                        teksLatin: 'Malikin-nās(i).',
+                        teksIndonesia: 'Raja manusia,'
+                    },
+                    {
+                        nomorAyat: 3,
+                        teksArab: 'اِلٰهِ النَّاسِۙ',
+                        teksTajwid: 'إِلَ<tajweed class="madda_normal">ـٰ</tajweed>هِ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed><tajweed class="ghunnah">نّ</tajweed>َ<tajweed class="madda_permissible">ا</tajweed>سِ',
+                        teksLatin: 'Ilāhin-nās(i).',
+                        teksIndonesia: 'sembahan manusia,'
+                    },
+                    {
+                        nomorAyat: 4,
+                        teksArab: 'مِنْ شَرِّ الْوَسْوَاسِ ەۙ الْخَنَّاسِۖ',
+                        teksTajwid: 'مِ<tajweed class="ikhafa">ن ش</tajweed>َرِّ <tajweed class="ham_wasl">ٱ</tajweed>لْوَسْوَاسِ <tajweed class="ham_wasl">ٱ</tajweed>لْخَ<tajweed class="ghunnah">نّ</tajweed>َ<tajweed class="madda_permissible">ا</tajweed>سِ',
+                        teksLatin: 'Min syarril-waswāsil-khannās(i).',
+                        teksIndonesia: 'dari kejahatan (bisikan) setan yang bersembunyi,'
+                    },
+                    {
+                        nomorAyat: 5,
+                        teksArab: 'الَّذِيْ يُوَسْوِسُ فِيْ صُدُوْرِ النَّاسِۙ',
+                        teksTajwid: 'ٱلَّذِى يُوَسْوِسُ فِى صُدُورِ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed><tajweed class="ghunnah">نّ</tajweed>َ<tajweed class="madda_permissible">ا</tajweed>سِ',
+                        teksLatin: 'Allażī yuwaswisu fī ṣudūrin-nās(i).',
+                        teksIndonesia: 'yang membisikkan (kejahatan) ke dalam dada manusia,'
+                    },
+                    {
+                        nomorAyat: 6,
+                        teksArab: 'مِنَ الْجِنَّةِ وَالنَّاسِ',
+                        teksTajwid: 'مِنَ <tajweed class="ham_wasl">ٱ</tajweed>لْجِ<tajweed class="ghunnah">نّ</tajweed>َةِ وَ<tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed><tajweed class="ghunnah">نّ</tajweed>َ<tajweed class="madda_permissible">ا</tajweed>سِ',
+                        teksLatin: 'Minal-jinnati wan-nās(i).',
+                        teksIndonesia: 'dari (golongan) jin dan manusia."'
+                    }
+                ]
+            }
+        ];
+
+        // 30 Misi Harian Ramadhan Khas Pelajar SMA/SMK
+        const MISSIONS_30 = [
+            { day: 1,  title: 'Meluruskan Niat', hikmah: 'Segala amal tergantung niatnya. Awal Ramadhan adalah momen terbaik menata hati agar puasa bukan sekadar menahan lapar, melainkan bentuk cinta kepada Allah.', cText: 'Temanmu mengajak ikut tarawih hanya demi foto story agar terlihat rajin. Sikapmu?', cOpts: ['Ikut tarawih sambil menata niat lillahitaala, tanpa pamer', 'Ikut demi konten story saja'], cGood: 0, q: 'Perintah wajib puasa Ramadhan terdapat dalam Al-Qur\'an surah...', qOpts: ['Al-Baqarah ayat 183', 'Al-Baqarah ayat 255', 'Ali Imran ayat 102'], qAns: 0, qExp: 'QS. Al-Baqarah: 183 menjelaskan diwajibkannya puasa agar kita bertakwa.' },
+            { day: 2,  title: 'Berbakti Saat Sahur', hikmah: 'Di dalam sahur terdapat keberkahan. Membantu orang tua menyiapkan sahur menambah pahala berkali lipat.', cText: 'Ibu terlihat lelah menyiapkan sahur pukul 03.30. Apa yang kamu lakukan?', cOpts: ['Bangun lebih awal, bantu menata meja & mencuci piring', 'Tetap tidur sampai makanan siap di meja'], cGood: 0, q: 'Hukum makan sahur bagi orang yang hendak berpuasa adalah...', qOpts: ['Wajib', 'Sunnah Muakkad', 'Mubah'], qAns: 1, qExp: 'Sahur hukumnya sunnah yang sangat dianjurkan karena penuh keberkahan.' },
+            { day: 3,  title: 'Puasa Jempol di Medsos', hikmah: 'Puasa bukan hanya menahan makan, tetapi juga menahan lisan dan jari dari menyakiti orang lain di media sosial.', cText: 'Di grup kelas ada teman yang mulai menyindir penampilan teman lain. Sikapmu?', cOpts: ['Mengalihkan pembicaraan ke hal positif & tidak ikut menyindir', 'Ikut menertawakan dengan stiker'], cGood: 0, q: 'Perbuatan membicarakan keburukan orang lain di belakangnya disebut...', qOpts: ['Ghibah', 'Tawadhu', 'Qanaah'], qAns: 0, qExp: 'Ghibah dapat mengurangi bahkan menghapus pahala puasa.' },
+            { day: 4,  title: 'Jujur Saat Ujian', hikmah: 'Allah Maha Melihat. Nilai tinggi dari hasil menyontek tidak akan membawa keberkahan ilmu.', cText: 'Saat ulangan di kelas, teman sebangkumu menyodorkan contekan jawaban. Sikapmu?', cOpts: ['Menolak dengan sopan dan mengerjakan sesuai kemampuan', 'Menerima diam-diam mumpung guru tidak melihat'], cGood: 0, q: 'Sifat wajib Rasul yang berarti jujur dan dapat dipercaya secara berurutan adalah...', qOpts: ['Siddiq dan Amanah', 'Tabligh dan Fathanah', 'Amanah dan Fathanah'], qAns: 0, qExp: 'Siddiq artinya jujur, sedangkan Amanah artinya dapat dipercaya.' },
+            { day: 5,  title: 'Menjaga Waktu Subuh', hikmah: 'Dua rakaat fajar sebelum Subuh lebih baik dari dunia dan seisinya. Pelajar hebat memulai hari dengan keberkahan pagi.', cText: 'Setelah sahur dan Subuh, kamu tergoda tidur lagi padahal jam 07.00 harus sekolah. Sikapmu?', cOpts: ['Tilawah sebentar lalu bersiap sekolah agar segar dan tepat waktu', 'Tidur lagi dan mengambil risiko terlambat'], cGood: 0, q: 'Sholat sunnah yang dikerjakan sebelum sholat Subuh disebut...', qOpts: ['Sholat Dhuha', 'Qabliyah Subuh (Fajar)', 'Sholat Witir'], qAns: 1, qExp: 'Sholat sunnah Qabliyah Subuh memiliki keutamaan sangat besar.' },
+            { day: 6,  title: 'Bersahabat dengan Al-Qur\'an', hikmah: 'Ramadhan adalah Syahrul Qur\'an (bulan diturunkannya Al-Qur\'an). Setiap satu huruf yang dibaca bernilai sepuluh kebaikan.', cText: 'Waktu istirahat sekolah masih tersisa 15 menit. Pilihan terbaikmu?', cOpts: ['Membaca 1 halaman Al-Qur\'an di HP atau musholla', 'Scroll video pendek tanpa henti sampai bel'], cGood: 0, q: 'Peristiwa pertama kali turunnya wahyu Al-Qur\'an disebut...', qOpts: ['Isra Miraj', 'Nuzulul Qur\'an', 'Fathu Makkah'], qAns: 1, qExp: 'Nuzulul Qur\'an adalah peristiwa turunnya wahyu pertama di Gua Hira.' },
+            { day: 7,  title: 'Sabar Saat Lapar', hikmah: 'Puasa melatih kendali emosi. Orang kuat bukanlah yang pandai bergulat, melainkan yang mampu menahan amarahnya.', cText: 'Di perjalanan pulang sekolah yang panas, ada pengendara lain memotong jalanmu. Sikapmu?', cOpts: ['Mengucap istighfar, sabar, dan tetap berhati-hati', 'Membalas dengan teriakan kasar'], cGood: 0, q: 'Kalimat yang dianjurkan dibaca ketika sedang marah atau khilaf adalah...', qOpts: ['Istighfar & Ta\'awudz', 'Tahmid saja', 'Talbiyah'], qAns: 0, qExp: 'Memohon perlindungan Allah (Ta\'awudz) dan Istighfar meredakan amarah.' },
+            { day: 8,  title: 'Sedekah Tak Mengurangi Harta', hikmah: 'Sedekah di bulan Ramadhan pahalanya berlipat ganda, bahkan senyuman tulus pun bernilai sedekah.', cText: 'Uang sakumu tersisa sedikit saat melihat kotak infak masjid sekolah. Sikapmu?', cOpts: ['Menyisihkan sebagian dengan ikhlas sesuai kemampuan', 'Menunggu nanti saja kalau sudah kaya'], cGood: 0, q: 'Salah satu amalan yang pahalanya terus mengalir meski telah wafat adalah...', qOpts: ['Sedekah Jariyah', 'Puasa Sunnah', 'Haji Mabrur'], qAns: 0, qExp: 'Sedekah jariyah, ilmu bermanfaat, dan doa anak saleh adalah amal yang terus mengalir.' },
+            { day: 9,  title: 'Menghormati Guru', hikmah: 'Keberkahan ilmu sangat erat dengan adab seorang murid kepada gurunya.', cText: 'Guru sedang menjelaskan materi pelajaran saat suasana kelas mulai mengantuk. Sikapmu?', cOpts: ['Tetap menyimak, mencatat, dan menjaga ketenangan kelas', 'Tidur telungkup di meja sambil mengobrol'], cGood: 0, q: 'Menuntut ilmu bagi setiap muslim hukumnya adalah...', qOpts: ['Sunnah', 'Wajib', 'Makruh'], qAns: 1, qExp: 'Rasulullah SAW bersabda bahwa menuntut ilmu wajib bagi setiap muslim.' },
+            { day: 10, title: 'Penutup 10 Hari Pertama (Rahmat)', hikmah: 'Sepuluh hari pertama Ramadhan adalah fase penuh rahmat. Pertahankan semangat awal agar tidak kendor.', cText: 'Masuk hari ke-10, saf tarawih mulai berkurang. Bagaimana sikapmu?', cOpts: ['Tetap istiqomah sholat tarawih dan mengajak teman', 'Ikut-ikutan bolos tarawih'], cGood: 0, q: 'Jumlah rakaat sholat Witir paling sedikit adalah...', qOpts: ['1 rakaat', '2 rakaat', '4 rakaat'], qAns: 0, qExp: 'Sholat Witir berjumlah ganjil, paling sedikit 1 rakaat.' },
+            { day: 11, title: 'Anti Mubazir Saat Berbuka', hikmah: 'Allah tidak menyukai orang-orang yang berlebih-lebihan (israf), termasuk saat membeli takjil berbuka.', cText: 'Menjelang maghrib kamu lapar sekali dan ingin membeli banyak jajanan. Sikapmu?', cOpts: ['Membeli secukupnya agar tidak ada makanan terbuang', 'Membeli semua yang terlihat meski tak habis'], cGood: 0, q: 'Menyegerakan berbuka puasa saat adzan Maghrib hukumnya...', qOpts: ['Sunnah', 'Makruh', 'Haram'], qAns: 0, qExp: 'Menyegerakan berbuka saat waktunya tiba termasuk sunnah Nabi SAW.' },
+            { day: 12, title: 'Doa untuk Orang Tua', hikmah: 'Waktu menjelang berbuka puasa adalah salah satu waktu mustajab untuk berdoa.', cText: '5 menit sebelum adzan Maghrib berkumandang. Apa yang sebaiknya kamu lakukan?', cOpts: ['Duduk tenang dan mendoakan orang tua, guru, dan cita-cita', 'Sibuk mengeluh adzan belum bunyi'], cGood: 0, q: 'QS. Al-Isra: 23 tentang berbakti kepada orang tua melarang kita mengucapkan kata...', qOpts: ['"Ah"', '"Maaf"', '"Terima kasih"'], qAns: 0, qExp: 'Bahkan ucapan "Ah" yang menunjukkan kejengkelan kepada orang tua dilarang.' },
+            { day: 13, title: 'Menepati Janji', hikmah: 'Menepati janji adalah ciri orang beriman dan membangun kepercayaan jangka panjang.', cText: 'Kamu berjanji mengumpulkan bagian tugas kelompok jam 16.00. Sikapmu?', cOpts: ['Menyelesaikan tepat waktu atau memberi kabar baik-baik jika ada kendala', 'Menghilang tanpa kabar sampai malam'], cGood: 0, q: 'Mengingkari janji termasuk salah satu ciri orang...', qOpts: ['Munafik', 'Tawadhu', 'Qanaah'], qAns: 0, qExp: 'Tiga ciri munafik: berdusta, mengingkari janji, dan berkhianat.' },
+            { day: 14, title: 'Kebersihan Sebagian Iman', hikmah: 'Lingkungan yang bersih membuat ibadah dan belajar jauh lebih khusyuk.', cText: 'Setelah buka bersama di sekolah, banyak gelas plastik tertinggal di dekatmu. Sikapmu?', cOpts: ['Memungut dan membuangnya ke tempat sampah', 'Membiarkannya karena bukan sampahmu'], cGood: 0, q: 'Bersuci dari hadas kecil sebelum melaksanakan sholat dilakukan dengan...', qOpts: ['Wudhu', 'Tayamum selalu', 'Istinja saja'], qAns: 0, qExp: 'Wudhu adalah syarat sah sholat untuk menghilangkan hadas kecil.' },
+            { day: 15, title: 'Evaluasi Pertengahan Ramadhan', hikmah: 'Separuh Ramadhan telah berlalu. Saatnya mengecek kembali target tilawah dan sholat kita.', cText: 'Target tadarusmu tertinggal beberapa halaman dari rencana awal. Sikapmu?', cOpts: ['Menambah sedikit bacaan tiap selesai sholat agar terkejar', 'Menyerah dan berhenti tadarus'], cGood: 0, q: 'Kitab suci Al-Qur\'an terdiri dari berapa Juz?', qOpts: ['20 Juz', '30 Juz', '40 Juz'], qAns: 1, qExp: 'Al-Qur\'an dibagi menjadi 30 Juz dan 114 Surah.' },
+            { day: 16, title: 'Menjaga Pandangan & Tontonan', hikmah: 'Apa yang kita tonton membentuk pola pikir dan kebersihan hati kita.', cText: 'Muncul konten negatif di beranda media sosialmu saat berpuasa. Sikapmu?', cOpts: ['Segera skip / klik "Tidak Tertarik" agar algoritma bersih', 'Menontonnya terus sampai selesai'], cGood: 0, q: 'Bulan Ramadhan disebut juga bulan Maghfirah yang artinya bulan...', qOpts: ['Ampunan', 'Kekayaan', 'Perjalanan'], qAns: 0, qExp: 'Maghfirah berarti ampunan Allah bagi hamba-Nya yang bertaubat.' },
+            { day: 17, title: 'Memperingati Nuzulul Qur\'an', hikmah: 'Malam 17 Ramadhan mengingatkan kita pada turunnya wahyu pertama: "Iqra!" (Bacalah!).', cText: 'Bagaimana cara pelajar memaknai perintah "Iqra" di era modern?', cOpts: ['Rajin membaca Al-Qur\'an dan belajar ilmu pengetahuan dengan serius', 'Cukup membaca judul berita tanpa memahami isinya'], cGood: 0, q: 'Wahyu pertama yang turun kepada Nabi Muhammad SAW adalah surah...', qOpts: ['Al-Alaq ayat 1-5', 'Al-Fatihah ayat 1-7', 'Al-Muddassir ayat 1-5'], qAns: 0, qExp: 'QS. Al-Alaq ayat 1-5 dimulai dengan perintah "Iqra" (Bacalah).' },
+            { day: 18, title: 'Saling Menolong dalam Kebaikan', hikmah: 'Allah senantiasa menolong hamba-Nya selama hamba tersebut menolong saudaranya.', cText: 'Ada teman sekelas kesulitan memahami pelajaran menjelang ujian. Sikapmu?', cOpts: ['Meluangkan waktu mengajarinya dengan sabar', 'Menyimpan ilmu sendiri agar dia tertinggal'], cGood: 0, q: 'Tolong-menolong dalam kebaikan dan takwa diperintahkan dalam surah...', qOpts: ['Al-Maidah ayat 2', 'Al-Kafirun ayat 6', 'Al-Fil ayat 1'], qAns: 0, qExp: 'QS. Al-Maidah: 2 memerintahkan saling menolong dalam kebajikan dan takwa.' },
+            { day: 19, title: 'Rendah Hati (Tawadhu)', hikmah: 'Ilmu yang sejati membuat pemiliknya semakin merunduk seperti padi yang berisi.', cText: 'Kamu mendapat nilai tertinggi di kelas. Bagaimana reaksimu?', cOpts: ['Mengucap Alhamdulillah dan tetap ramah kepada semua teman', 'Merendahkan teman yang nilainya di bawahmu'], cGood: 0, q: 'Lawan kata dari sifat Tawadhu (rendah hati) adalah...', qOpts: ['Takabur (Sombong)', 'Syukur', 'Ikhlas'], qAns: 0, qExp: 'Takabur adalah sifat sombong yang sangat dibenci Allah.' },
+            { day: 20, title: 'Persiapan 10 Malam Terakhir', hikmah: 'Nabi Muhammad SAW mengencangkan ikat pinggang dan meningkatkan ibadah di 10 hari terakhir Ramadhan.', cText: 'Memasuki 10 hari terakhir, mall mulai ramai diskon lebaran. Sikapmu?', cOpts: ['Memprioritaskan ibadah malam & tadarus, belanja secukupnya saja', 'Menghabiskan seluruh malam hanya untuk jalan-jalan'], cGood: 0, q: 'Berdiam diri di masjid dengan niat beribadah di 10 hari terakhir Ramadhan disebut...', qOpts: ['I\'tikaf', 'Tawaf', 'Sa\'i'], qAns: 0, qExp: 'I\'tikaf sangat dianjurkan pada 10 hari terakhir Ramadhan.' },
+            { day: 21, title: 'Memburu Lailatul Qadar', hikmah: 'Malam Lailatul Qadar lebih baik dari seribu bulan (lebih dari 83 tahun ibadah).', cText: 'Malam ganjil ke-21 tiba. Amalan ringan apa yang bisa kamu jaga malam ini?', cOpts: ['Sholat malam, tadarus, dan memperbanyak doa "Allahumma innaka \'afuwwun..."', 'Begadang main game sampai sahur'], cGood: 0, q: 'Keutamaan Lailatul Qadar dijelaskan secara khusus dalam surah...', qOpts: ['Al-Qadr', 'Al-Qari\'ah', 'At-Tin'], qAns: 0, qExp: 'QS. Al-Qadr menerangkan bahwa Lailatul Qadar lebih baik dari seribu bulan.' },
+            { day: 22, title: 'Memaafkan Kesalahan', hikmah: 'Hati yang lapang untuk memaafkan akan lebih mudah menerima ketenangan dan rahmat Allah.', cText: 'Ada teman yang pernah membuatmu kesal meminta maaf sebelum libur lebaran. Sikapmu?', cOpts: ['Memaafkannya dengan tulus dan membuka lembaran baru', 'Menolak memaafkan dan menyimpan dendam'], cGood: 0, q: 'Salah satu Asmaul Husna yang berarti Allah Maha Pemaaf adalah...', qOpts: ['Al-\'Afuww', 'Al-Qahhar', 'Al-Muntaqim'], qAns: 0, qExp: 'Al-\'Afuww berarti Yang Maha Pemaaf dan menghapus kesalahan.' },
+            { day: 23, title: 'Konsisten Sholat Dhuha', hikmah: 'Sholat Dhuha adalah bentuk syukur atas setiap persendian tubuh kita di pagi hari.', cText: 'Di sela libur atau istirahat pagi, kamu punya waktu luang 10 menit. Pilihanmu?', cOpts: ['Melaksanakan sholat Dhuha 2 rakaat', 'Hanya rebahan main HP'], cGood: 0, q: 'Waktu pelaksanaan sholat Dhuha dimulai sejak...', qOpts: ['Matahari naik sepenggalah hingga menjelang Dzuhur', 'Setelah Dzuhur hingga Ashar', 'Setelah Maghrib'], qAns: 0, qExp: 'Sholat Dhuha dikerjakan pada pagi hari saat matahari naik hingga sebelum Dzuhur.' },
+            { day: 24, title: 'Berbagi Takjil / Kebaikan', hikmah: 'Barangsiapa memberi makan orang yang berpuasa, ia mendapat pahala setara orang tersebut tanpa mengurangi pahala aslinya.', cText: 'Tetangga atau petugas keamanan dekat rumah belum sempat membeli buka puasa. Sikapmu?', cOpts: ['Berbagi sebagian makanan/minuman buka puasa kepadanya', 'Cuek karena tidak terlalu kenal'], cGood: 0, q: 'Zakat yang wajib dikeluarkan setiap muslim di bulan Ramadhan sebelum sholat Idul Fitri adalah...', qOpts: ['Zakat Fitrah', 'Zakat Rikaz', 'Zakat Pertanian'], qAns: 0, qExp: 'Zakat Fitrah wajib ditunaikan untuk menyucikan jiwa dan membantu fakir miskin.' },
+            { day: 25, title: 'Malam Ganjil Penuh Doa', hikmah: 'Jangan pernah meremehkan kekuatan doa, sebab doa adalah senjata orang beriman.', cText: 'Kamu memiliki cita-cita kuliah atau bekerja di bidang impianmu. Sikapmu?', cOpts: ['Berikhtiar belajar maksimal dan menyertainya dengan doa di malam Ramadhan', 'Hanya berdoa tanpa mau belajar'], cGood: 0, q: 'Usaha sungguh-sungguh yang disertai berserah diri kepada Allah disebut...', qOpts: ['Ikhtiar dan Tawakal', 'Riya dan Sum\'ah', 'Hasad dan Dengki'], qAns: 0, qExp: 'Muslim yang baik memadukan ikhtiar maksimal dengan tawakal.' },
+            { day: 26, title: 'Menjaga Amanah Harta', hikmah: 'Harta yang halal dan jujur menumbuhkan ketenangan dalam hidup.', cText: 'Kamu menemukan uang jajan teman yang terjatuh di lantai musholla. Sikapmu?', cOpts: ['Mengamankannya dan mengumumkannya agar kembali ke pemiliknya', 'Mengambilnya diam-diam'], cGood: 0, q: 'Berapakah takaran umum Zakat Fitrah dalam bentuk beras per jiwa di Indonesia?', qOpts: ['Sekitar 2,5 kg - 3 kg beras', '10 kg beras', '0,5 kg beras'], qAns: 0, qExp: 'Zakat Fitrah sebesar 1 sha\' atau setara 2,5 kg hingga 3 kg makanan pokok.' },
+            { day: 27, title: 'Semangat Malam 27 Ramadhan', hikmah: 'Banyak ulama berharap malam ke-27 adalah salah satu malam paling berpeluang turunnya Lailatul Qadar.', cText: 'Malam ke-27 suasana rumah mulai sibuk persiapan mudik/lebaran. Sikapmu?', cOpts: ['Tetap menyempatkan waktu khusus untuk sholat malam & dzikir', 'Lupa ibadah karena terlalu sibuk urusan baju baru'], cGood: 0, q: 'Malaikat yang turun ke bumi pada malam Lailatul Qadar atas izin Allah dipimpin oleh...', qOpts: ['Malaikat Jibril (Ar-Ruh)', 'Malaikat Malik', 'Malaikat Izrail'], qAns: 0, qExp: 'Dalam QS. Al-Qadr: 4 disebutkan para malaikat dan Ar-Ruh (Jibril) turun pada malam itu.' },
+            { day: 28, title: 'Silaturahmi dengan Keluarga', hikmah: 'Menyambung silaturahmi melapangkan rezeki dan memanjangkan keberkahan umur.', cText: 'Kakek atau saudara jauh menelepon menanyakan kabarmu. Sikapmu?', cOpts: ['Berbicara dengan sopan, ramah, dan mendoakan kesehatannya', 'Menjawab singkat sambil terus bermain HP'], cGood: 0, q: 'Hukum berpuasa pada tanggal 1 Syawal (Hari Raya Idul Fitri) adalah...', qOpts: ['Haram', 'Sunnah', 'Wajib'], qAns: 0, qExp: 'Tanggal 1 Syawal adalah hari raya sehingga diharamkan berpuasa.' },
+            { day: 29, title: 'Menyiapkan Hati Menuju Fitrah', hikmah: 'Keberhasilan Ramadhan terlihat dari perubahan akhlak kita setelah Ramadhan berakhir.', cText: 'Ramadhan hampir usai. Kebiasaan baik apa yang paling ingin kamu teruskan di bulan Syawal?', cOpts: ['Menjaga sholat tepat waktu dan rutin membaca Al-Qur\'an tiap hari', 'Kembali meninggalkan ibadah setelah lebaran'], cGood: 0, q: 'Puasa sunnah 6 hari setelah Ramadhan yang pahalanya seperti puasa setahun penuh adalah...', qOpts: ['Puasa Syawal', 'Puasa Arafah', 'Puasa Asyura'], qAns: 0, qExp: 'Puasa Ramadhan diikuti 6 hari di bulan Syawal berpahala seperti puasa setahun.' },
+            { day: 30, title: 'Khatam Bulan dengan Syukur', hikmah: 'Taqabbalallahu minna wa minkum. Semoga seluruh ibadah kita selama 30 hari diterima oleh Allah SWT.', cText: 'Malam takbiran tiba. Bagaimana cara terbaik merayakan kemenangan Idul Fitri?', cOpts: ['Mengumandangkan takbir, membantu keluarga, dan menjaga keselamatan', 'Bermain petasan yang membahayakan orang lain'], cGood: 0, q: 'Kalimat utama yang dikumandangkan sejak malam 1 Syawal hingga sholat Id adalah...', qOpts: ['Takbir (Allahu Akbar)', 'Qunut', 'Talbiyah'], qAns: 0, qExp: 'Mengumandangkan takbir adalah syiar rasa syukur di Hari Raya Idul Fitri.' }
+        ];
+
+        // ---------------------------------------------------------------------
+        // 2. LOGIKA UTAMA APLIKASI (CLASS BUKU RAMADHAN)
+        // ---------------------------------------------------------------------
+        class BukuRamadhanApp {
+            constructor() {
+                this.isDemo = false;
+                this.db = null;
+                this.nis = '';
+                this.activeTab = 'jurnal';
+                this.activeDay = 1;
+                this.showTranslation = true;
+                this.khatMode = 'indo';       // Default: Mushaf Indonesia ('indo' | 'tajwid')
+                this.arabicFontSize = 26;     // Default 26px (rentang 22px - 36px)
+                this.surahList = [];
+                this.currentSurah = null;
+                this.currentTajwidSource = 'Utsmani Tajwid';
+                this.pendingScrollAyat = null;
+                this.resetConfirmArmed = false;
+                this.activeMission = null;
+                this.missionCaseDone = false;
+                this.missionQuizDone = false;
+                this.toastTimer = null;
+
+                // Struktur data utama (sinkron dengan Firestore & pantau-ramadhan.html)
+                this.data = {
+                    nis: '2425.10.001',
+                    nama: 'Ahmad Fauzan',
+                    kelas: 'XI MIPA 1',
+                    tahun: '1448H',
+                    updatedAt: new Date().toISOString(),
+                    days: {},
+                    quranProgress: {
+                        totalAyat: 0,
+                        lastBookmark: null, // { nomorSurah, namaSurah, ayatTerakhir, totalAyat }
+                        surahProgress: {},  // { [nomorSurah]: ayatTerakhir }
+                        lastSurah: null,
+                        lastSurahName: '',
+                        lastAyat: 0,
+                        readLogs: []
+                    },
+                    missionsCompleted: {},
+                    stars: 0
+                };
+
+                this.initTheme();
+                this.initReaderPrefs();
+                this.bootstrap();
+            }
+
+            // Sinkronisasi tema dengan Portal Siswa (localStorage.theme)
+            initTheme() {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+
+            toggleTheme() {
+                document.documentElement.classList.toggle('dark');
+                localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            }
+
+            // Inisialisasi Preferensi Pembaca Al-Qur'an (Ukuran Huruf & Pilihan 2 Versi Khat)
+            initReaderPrefs() {
+                try {
+                    const savedSize = parseInt(localStorage.getItem(ARABIC_SIZE_KEY), 10);
+                    if (!isNaN(savedSize) && savedSize >= 22 && savedSize <= 36) {
+                        this.arabicFontSize = savedSize;
+                    }
+                    const savedKhat = localStorage.getItem(KHAT_PREF_KEY);
+                    if (savedKhat === 'indo' || savedKhat === 'tajwid') {
+                        this.khatMode = savedKhat;
+                    }
+                } catch (_) {}
+                this.applyReaderPrefsUI();
+            }
+
+            changeArabicSize(delta) {
+                const next = Math.max(22, Math.min(36, this.arabicFontSize + delta));
+                if (next === this.arabicFontSize) return;
+                this.arabicFontSize = next;
+                try { localStorage.setItem(ARABIC_SIZE_KEY, String(next)); } catch (_) {}
+                this.applyReaderPrefsUI();
+            }
+
+            setKhatMode(mode) {
+                if (mode !== 'indo' && mode !== 'tajwid') return;
+                if (this.khatMode === mode) return;
+                this.khatMode = mode;
+                try { localStorage.setItem(KHAT_PREF_KEY, mode); } catch (_) {}
+                this.applyReaderPrefsUI();
+                if (this.currentSurah) this.renderSurahReader();
+                this.showToast(mode === 'tajwid' ? 'Beralih ke Utsmani Tajwid Berwarna' : 'Beralih ke Mushaf Indonesia');
+            }
+
+            applyReaderPrefsUI() {
+                const isTajwid = this.khatMode === 'tajwid';
+                const reader = document.getElementById('quran-reader-view');
+                if (reader) {
+                    reader.style.setProperty('--arabic-font-size', `${this.arabicFontSize}px`);
+                    reader.classList.toggle('tajweed-off', !isTajwid);
+                }
+
+                const label = document.getElementById('arabic-size-label');
+                if (label) label.textContent = `${this.arabicFontSize}px`;
+
+                const btnDec = document.getElementById('btn-arab-dec');
+                const btnInc = document.getElementById('btn-arab-inc');
+                if (btnDec) btnDec.classList.toggle('opacity-40', this.arabicFontSize <= 22);
+                if (btnInc) btnInc.classList.toggle('opacity-40', this.arabicFontSize >= 36);
+
+                // Segmented Switch Khat & Legenda Tajwid
+                const btnIndo = document.getElementById('btn-khat-indo');
+                const btnTajwid = document.getElementById('btn-khat-tajwid');
+                const legendCard = document.getElementById('tajwid-legend-card');
+                const bismillahEl = document.getElementById('reader-bismillah-text');
+
+                if (btnIndo) btnIndo.classList.toggle('active', !isTajwid);
+                if (btnTajwid) btnTajwid.classList.toggle('active', isTajwid);
+                if (legendCard) legendCard.classList.toggle('hidden', !isTajwid);
+
+                if (bismillahEl) {
+                    bismillahEl.innerHTML = isTajwid
+                        ? 'بِسْمِ <tajweed class="ham_wasl">ٱ</tajweed>للَّهِ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>رَّحْمَ<tajweed class="madda_normal">ـٰ</tajweed>نِ <tajweed class="ham_wasl">ٱ</tajweed><tajweed class="laam_shamsiyah">ل</tajweed>رَّحِ<tajweed class="madda_permissible">ي</tajweed>مِ'
+                        : 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ';
+                }
+            }
+
+            updateConnectionBadge(isFirebase) {
+                const badge = document.getElementById('conn-badge');
+                const dot = document.getElementById('conn-dot');
+                const txt = document.getElementById('conn-text');
+                if (!badge) return;
+                if (isFirebase) {
+                    badge.className = 'px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-bold tracking-wide flex items-center gap-1.5';
+                    dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse';
+                    txt.textContent = 'Tersinkron Firebase';
+                } else {
+                    badge.className = 'px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-bold tracking-wide flex items-center gap-1.5';
+                    dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
+                    txt.textContent = 'Mode Pratinjau';
+                }
+            }
+
+            showToast(msg) {
+                const box = document.getElementById('toast-box');
+                document.getElementById('toast-msg').textContent = msg;
+                box.classList.remove('toast-hidden');
+                box.classList.add('toast-show');
+                if (this.toastTimer) clearTimeout(this.toastTimer);
+                this.toastTimer = setTimeout(() => {
+                    box.classList.remove('toast-show');
+                    box.classList.add('toast-hidden');
+                }, 2400);
+            }
+
+            // Inisialisasi Firebase v11.6.1 atau Fallback ke Mode Pratinjau
+            async bootstrap() {
+                const savedConfig = localStorage.getItem('sakti_school_config');
+                const savedNis = localStorage.getItem('student_nis');
+
+                if (savedConfig && savedNis) {
+                    try {
+                        const configObj = JSON.parse(savedConfig);
+                        const fbApp = initializeApp(configObj, 'RamadhanSchoolApp');
+                        const auth = getAuth(fbApp);
+                        this.db = getFirestore(fbApp);
+                        await signInAnonymously(auth);
+
+                        this.nis = savedNis;
+                        const siswaSnap = await getDoc(doc(this.db, 'siswa', this.nis));
+                        if (siswaSnap.exists()) {
+                            const s = siswaSnap.data();
+                            this.data.nis = this.nis;
+                            this.data.nama = s.nama || 'Siswa SAKTI';
+                            this.data.kelas = s.kelas || '-';
+                        } else {
+                            this.data.nis = this.nis;
+                        }
+
+                        const jurnalSnap = await getDoc(doc(this.db, 'jurnal_ramadhan', this.nis));
+                        if (jurnalSnap.exists()) {
+                            this.mergeLoadedData(jurnalSnap.data());
+                        }
+                        this.isDemo = false;
+                        this.updateConnectionBadge(true);
+                    } catch (err) {
+                        console.warn('Gagal menyambung Firebase, beralih ke Mode Pratinjau:', err);
+                        this.initDemoMode();
+                    }
+                } else {
+                    this.initDemoMode();
+                }
+
+                this.renderHeader();
+                this.renderDayPills();
+                this.loadDayForm(this.activeDay);
+                this.renderQuranProgress();
+                this.fetchSurahList();
+                this.renderMissionsGrid();
+                this.renderBadgesAndStats();
+
+                document.getElementById('loading-overlay').classList.add('hidden');
+            }
+
+            initDemoMode() {
+                this.isDemo = true;
+                this.updateConnectionBadge(false);
+                try {
+                    const raw = localStorage.getItem(DEMO_STORAGE_KEY);
+                    if (raw) {
+                        this.mergeLoadedData(JSON.parse(raw));
+                    } else {
+                        this.data.days['1'] = {
+                            puasa: 'penuh',
+                            puasaAlasan: '',
+                            sholat: { subuh: 'jamaah', dzuhur: 'jamaah', ashar: 'sendiri', maghrib: 'jamaah', isya: 'jamaah' },
+                            sunnah: { tarawih: true, witir: true, dhuha: true, tahajud: false, rawatib: false },
+                            tadarus: { surah: 'Al-Fatihah', awal: 1, akhir: 7, jumlah: 7, jumlahAyat: 7 },
+                            kultum: { penceramah: 'Ust. H. Ahmad', tempat: 'Masjid', judul: 'Puasa Melatih Kejujuran', ringkasan: 'Puasa melatih kejujuran dan kendali diri bagi pelajar.' },
+                            kebaikan: { ortu: true, sedekah: true, teman: false, lisan: true, rumah: false, lain: 'Menyiapkan teh hangat untuk sahur' },
+                            paraf: true,
+                            parafGuru: true,
+                            catatanGuru: 'MasyaAllah, awal Ramadhan yang sangat baik!',
+                            updatedAt: new Date().toISOString()
+                        };
+                        this.data.quranProgress = {
+                            totalAyat: 7,
+                            lastBookmark: { nomorSurah: 1, namaSurah: 'Al-Fatihah', ayatTerakhir: 7, totalAyat: 7 },
+                            surahProgress: { '1': 7 },
+                            lastSurah: 1,
+                            lastSurahName: 'Al-Fatihah',
+                            lastAyat: 7,
+                            readLogs: ['1:1', '1:2', '1:3', '1:4', '1:5', '1:6', '1:7']
+                        };
+                    }
+                } catch (e) {
+                    console.warn('Demo storage error:', e);
+                }
+            }
+
+            mergeLoadedData(loaded) {
+                const qp = {
+                    totalAyat: 0,
+                    lastBookmark: null,
+                    surahProgress: {},
+                    lastSurah: null,
+                    lastSurahName: '',
+                    lastAyat: 0,
+                    readLogs: [],
+                    ...(loaded.quranProgress || {})
+                };
+
+                // Migrasi otomatis dari format lama (readLogs / lastSurah) ke surahProgress & lastBookmark
+                if (Object.keys(qp.surahProgress || {}).length === 0 && Array.isArray(qp.readLogs) && qp.readLogs.length > 0) {
+                    qp.surahProgress = {};
+                    qp.readLogs.forEach(item => {
+                        const [sNo, aNo] = String(item).split(':').map(Number);
+                        if (!isNaN(sNo) && !isNaN(aNo)) {
+                            qp.surahProgress[String(sNo)] = Math.max(qp.surahProgress[String(sNo)] || 0, aNo);
+                        }
+                    });
+                }
+                if (!qp.lastBookmark && qp.lastSurah && qp.lastSurahName) {
+                    qp.lastBookmark = {
+                        nomorSurah: qp.lastSurah,
+                        namaSurah: qp.lastSurahName,
+                        ayatTerakhir: qp.lastAyat || 1,
+                        totalAyat: qp.lastAyat || 1
+                    };
+                }
+
+                this.data = {
+                    ...this.data,
+                    ...loaded,
+                    days: loaded.days || {},
+                    quranProgress: qp,
+                    missionsCompleted: loaded.missionsCompleted || {},
+                    stars: Number(loaded.stars || 0)
+                };
+            }
+
+            async persistData() {
+                this.data.updatedAt = new Date().toISOString();
+                if (this.isDemo) {
+                    try {
+                        localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(this.data));
+                    } catch (e) {
+                        console.warn('Gagal simpan localStorage:', e);
+                    }
+                    return true;
+                }
+                try {
+                    await setDoc(doc(this.db, 'jurnal_ramadhan', this.nis), this.data, { merge: true });
+                    return true;
+                } catch (e) {
+                    console.error('Gagal simpan ke Firestore:', e);
+                    this.showToast('Gagal menyimpan ke server, periksa koneksi internet');
+                    return false;
+                }
+            }
+
+            renderHeader() {
+                document.getElementById('student-name').textContent = this.data.nama;
+                document.getElementById('student-class').textContent = this.data.kelas;
+                document.getElementById('student-nis').textContent = this.data.nis;
+                document.getElementById('header-stars').textContent = this.data.stars;
+            }
+
+            switchTab(tabId) {
+                this.activeTab = tabId;
+                document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+
+                document.querySelectorAll('.nav-item').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.nav === tabId);
+                });
+
+                if (tabId === 'lencana') this.renderBadgesAndStats();
+                if (tabId === 'quran') this.renderQuranProgress();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // -----------------------------------------------------------------
+            // 3. TAB 1: JURNAL HARIAN (1 - 30)
+            // -----------------------------------------------------------------
+            getEmptyDay() {
+                return {
+                    puasa: 'penuh',
+                    puasaAlasan: '',
+                    sholat: { subuh: 'belum', dzuhur: 'belum', ashar: 'belum', maghrib: 'belum', isya: 'belum' },
+                    sunnah: { tarawih: false, witir: false, dhuha: false, tahajud: false, rawatib: false },
+                    tadarus: { surah: '', awal: '', akhir: '', jumlah: 0, jumlahAyat: 0 },
+                    kultum: { penceramah: '', tempat: 'Masjid', judul: '', ringkasan: '' },
+                    kebaikan: { ortu: false, sedekah: false, teman: false, lisan: false, rumah: false, lain: '' },
+                    paraf: false,
+                    parafGuru: false,
+                    catatanGuru: ''
+                };
+            }
+
+            renderDayPills() {
+                const container = document.getElementById('day-pills-container');
+                let html = '';
+                for (let d = 1; d <= 30; d++) {
+                    const key = String(d);
+                    const dayObj = this.data.days[key];
+                    const hasData = !!dayObj;
+                    const hasMission = !!this.data.missionsCompleted[key];
+                    const hasParaf = !!(dayObj && (dayObj.paraf === true || dayObj.parafGuru === true));
+                    const isActive = d === this.activeDay;
+
+                    html += `
+                        <button type="button" onclick="app.selectDay(${d})"
+                            class="snap-center shrink-0 w-12 py-2 rounded-2xl border flex flex-col items-center justify-center gap-0.5 transition ${isActive
+                                ? 'bg-gradient-to-b from-emerald-500 to-teal-600 text-white border-transparent shadow-md scale-105'
+                                : 'bg-white/70 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'}">
+                            <span class="text-[9px] font-bold uppercase opacity-80">Hari</span>
+                            <span class="text-sm font-black font-mono leading-none">${d}</span>
+                            <div class="flex items-center gap-0.5 h-3 mt-0.5">
+                                ${hasData ? `<span class="w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : 'bg-emerald-500'}"></span>` : ''}
+                                ${hasMission ? `<i class="ph-fill ph-star text-[9px] ${isActive ? 'text-amber-200' : 'text-amber-400'}"></i>` : ''}
+                                ${hasParaf ? `<i class="ph-fill ph-seal-check text-[10px] ${isActive ? 'text-sky-200' : 'text-sky-500'}"></i>` : ''}
+                            </div>
+                        </button>
+                    `;
+                }
+                container.innerHTML = html;
+            }
+
+            selectDay(day) {
+                this.activeDay = day;
+                this.renderDayPills();
+                this.loadDayForm(day);
+            }
+
+            loadDayForm(day) {
+                const key = String(day);
+                const existing = this.data.days[key];
+                this.draftDay = existing ? JSON.parse(JSON.stringify(existing)) : this.getEmptyDay();
+                const d = this.draftDay;
+
+                document.querySelectorAll('.active-day-num').forEach(el => {
+                    el.textContent = key;
+                });
+                const saveLabel = document.getElementById('save-label');
+                if (saveLabel) saveLabel.textContent = `Simpan Jurnal Hari ke-${key}`;
+
+                // Banner Paraf Guru (Read-Only)
+                const isParaf = Boolean(existing && (existing.paraf === true || existing.parafGuru === true));
+                const parafBanner = document.getElementById('paraf-banner');
+                const parafNote = document.getElementById('paraf-note');
+                if (isParaf) {
+                    parafBanner.classList.remove('hidden');
+                    parafNote.textContent = existing.catatanGuru
+                        ? `Catatan Guru: "${existing.catatanGuru}"`
+                        : 'Jurnal hari ini telah diperiksa dan diverifikasi oleh guru.';
+                } else {
+                    parafBanner.classList.add('hidden');
+                }
+
+                // Puasa (dukung value lama 'tidak' agar tetap terbaca sebagai 'halangan')
+                const pVal = d.puasa === 'tidak' ? 'halangan' : (d.puasa || 'penuh');
+                this.setPuasa(pVal, false);
+                document.getElementById('input-puasa-alasan').value = d.puasaAlasan || '';
+
+                // Sholat Wajib & Sunnah
+                this.renderSholatWajib();
+                this.renderSholatSunnah();
+
+                // Tadarus (jika hari baru masih kosong & ada lastBookmark, otomatis isi saran lanjutan)
+                const tad = d.tadarus || {};
+                const nextInfo = this.getNextReadingTarget();
+                const hintBox = document.getElementById('jurnal-tadarus-hint');
+                const hintText = document.getElementById('jurnal-tadarus-hint-text');
+
+                if (nextInfo) {
+                    hintBox.classList.remove('hidden');
+                    hintText.textContent = `${nextInfo.namaSurah} mulai Ayat ${nextInfo.nextAyat}`;
+                } else {
+                    hintBox.classList.add('hidden');
+                }
+
+                const isDayEmptyTadarus = !tad.surah && !tad.awal && !tad.akhir;
+                if (isDayEmptyTadarus && nextInfo && !this.data.days[key]) {
+                    // Otomatis isi awal surah & ayat mulai = ayatTerakhir + 1 sebagai default
+                    document.getElementById('input-tadarus-surah').value = nextInfo.namaSurah;
+                    document.getElementById('input-tadarus-awal').value = nextInfo.nextAyat;
+                    document.getElementById('input-tadarus-akhir').value = '';
+                    document.getElementById('input-tadarus-jumlah').value = 0;
+                } else {
+                    document.getElementById('input-tadarus-surah').value = tad.surah || '';
+                    document.getElementById('input-tadarus-awal').value = tad.awal || '';
+                    document.getElementById('input-tadarus-akhir').value = tad.akhir || '';
+                    document.getElementById('input-tadarus-jumlah').value = tad.jumlahAyat ?? tad.jumlah ?? 0;
+                }
+
+                // Kultum
+                const kul = d.kultum || {};
+                document.getElementById('input-kultum-penceramah').value = kul.penceramah || '';
+                document.getElementById('input-kultum-tempat').value = kul.tempat || 'Masjid';
+                document.getElementById('input-kultum-judul').value = kul.judul || '';
+                document.getElementById('input-kultum-ringkasan').value = kul.ringkasan || '';
+
+                // Kebaikan
+                this.renderKebaikan();
+                document.getElementById('input-kebaikan-lain').value = (d.kebaikan && d.kebaikan.lain) || '';
+            }
+
+            applyBookmarkToJurnal() {
+                const nextInfo = this.getNextReadingTarget();
+                if (!nextInfo) return;
+                document.getElementById('input-tadarus-surah').value = nextInfo.namaSurah;
+                document.getElementById('input-tadarus-awal').value = nextInfo.nextAyat;
+                document.getElementById('input-tadarus-akhir').focus();
+                this.showToast(`Diisi otomatis: ${nextInfo.namaSurah} mulai Ayat ${nextInfo.nextAyat}`);
+            }
+
+            setPuasa(status, updateDraft = true) {
+                if (updateDraft && this.draftDay) this.draftDay.puasa = status;
+                document.querySelectorAll('.puasa-card').forEach(btn => {
+                    const active = btn.dataset.puasa === status;
+                    btn.classList.toggle('ring-2', active);
+                    btn.classList.toggle('ring-emerald-500', active && status === 'penuh');
+                    btn.classList.toggle('bg-emerald-500/15', active && status === 'penuh');
+                    btn.classList.toggle('ring-amber-500', active && status === 'setengah');
+                    btn.classList.toggle('bg-amber-500/15', active && status === 'setengah');
+                    btn.classList.toggle('ring-rose-500', active && status === 'halangan');
+                    btn.classList.toggle('bg-rose-500/15', active && status === 'halangan');
+                });
+                const alasanWrap = document.getElementById('puasa-alasan-wrap');
+                alasanWrap.classList.toggle('hidden', status === 'penuh');
+            }
+
+            renderSholatWajib() {
+                const wrap = document.getElementById('sholat-wajib-list');
+                const sholat = this.draftDay.sholat || {};
+                wrap.innerHTML = SHOLAT_WAJIB.map(item => {
+                    const val = sholat[item.key] || 'belum';
+                    return `
+                        <div class="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/70">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 pl-1 w-16">${item.label}</span>
+                            <div class="grid grid-cols-3 gap-1.5 flex-1">
+                                <button type="button" onclick="app.setSholat('${item.key}','belum')" class="py-1.5 px-1 rounded-xl text-[10px] font-bold transition ${val === 'belum' ? 'bg-slate-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-900/60 text-slate-500'}">Belum</button>
+                                <button type="button" onclick="app.setSholat('${item.key}','sendiri')" class="py-1.5 px-1 rounded-xl text-[10px] font-bold transition ${val === 'sendiri' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'bg-slate-100 dark:bg-slate-900/60 text-slate-500'}">Sendiri</button>
+                                <button type="button" onclick="app.setSholat('${item.key}','jamaah')" class="py-1.5 px-1 rounded-xl text-[10px] font-bold transition ${val === 'jamaah' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-900/60 text-slate-500'}">Jamaah</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            setSholat(key, status) {
+                if (!this.draftDay.sholat) this.draftDay.sholat = {};
+                this.draftDay.sholat[key] = status;
+                this.renderSholatWajib();
+            }
+
+            renderSholatSunnah() {
+                const wrap = document.getElementById('sholat-sunnah-list');
+                const sunnah = this.draftDay.sunnah || {};
+                wrap.innerHTML = SHOLAT_SUNNAH.map(item => {
+                    const active = !!sunnah[item.key];
+                    return `
+                        <button type="button" onclick="app.toggleSunnah('${item.key}')"
+                            class="px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition active:scale-95 ${active
+                                ? 'bg-teal-500 text-white border-teal-500 shadow-sm'
+                                : 'bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'}">
+                            <i class="ph-fill ${active ? 'ph-check-circle' : 'ph-circle'} text-sm"></i>
+                            <span>${item.label}</span>
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            toggleSunnah(key) {
+                if (!this.draftDay.sunnah) this.draftDay.sunnah = {};
+                this.draftDay.sunnah[key] = !this.draftDay.sunnah[key];
+                this.renderSholatSunnah();
+            }
+
+            calcTadarusCount() {
+                const awal = parseInt(document.getElementById('input-tadarus-awal').value, 10);
+                const akhir = parseInt(document.getElementById('input-tadarus-akhir').value, 10);
+                if (!isNaN(awal) && !isNaN(akhir) && akhir >= awal) {
+                    document.getElementById('input-tadarus-jumlah').value = (akhir - awal) + 1;
+                }
+            }
+
+            renderKebaikan() {
+                const wrap = document.getElementById('kebaikan-checklist');
+                const keb = this.draftDay.kebaikan || {};
+                wrap.innerHTML = KEBAIKAN_ITEMS.map(item => {
+                    const checked = !!keb[item.key];
+                    return `
+                        <button type="button" onclick="app.toggleKebaikan('${item.key}')"
+                            class="px-3 py-2 rounded-xl text-xs font-bold border flex items-center gap-1.5 transition active:scale-95 ${checked
+                                ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                                : 'bg-white/60 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}">
+                            <i class="ph-fill ${checked ? 'ph-heart' : 'ph-plus-circle'} text-sm"></i>
+                            <span>${item.label}</span>
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            toggleKebaikan(key) {
+                if (!this.draftDay.kebaikan) this.draftDay.kebaikan = {};
+                this.draftDay.kebaikan[key] = !this.draftDay.kebaikan[key];
+                this.renderKebaikan();
+            }
+
+            async saveCurrentDay() {
+                const btn = document.getElementById('btn-save-jurnal');
+                const icon = document.getElementById('save-icon');
+                btn.disabled = true;
+                icon.className = 'ph ph-spinner animate-spin text-lg';
+
+                const key = String(this.activeDay);
+                const prevDay = this.data.days[key];
+                const prevJumlah = Number((prevDay && prevDay.tadarus && (prevDay.tadarus.jumlahAyat ?? prevDay.tadarus.jumlah)) || 0);
+                const newJumlah = Math.max(0, parseInt(document.getElementById('input-tadarus-jumlah').value, 10) || 0);
+
+                this.draftDay.puasaAlasan = document.getElementById('input-puasa-alasan').value.trim();
+                this.draftDay.tadarus = {
+                    surah: document.getElementById('input-tadarus-surah').value.trim(),
+                    awal: document.getElementById('input-tadarus-awal').value.trim(),
+                    akhir: document.getElementById('input-tadarus-akhir').value.trim(),
+                    jumlah: newJumlah,
+                    jumlahAyat: newJumlah
+                };
+                this.draftDay.kultum = {
+                    penceramah: document.getElementById('input-kultum-penceramah').value.trim(),
+                    tempat: document.getElementById('input-kultum-tempat').value,
+                    judul: document.getElementById('input-kultum-judul').value.trim(),
+                    ringkasan: document.getElementById('input-kultum-ringkasan').value.trim()
+                };
+                if (!this.draftDay.kebaikan) this.draftDay.kebaikan = {};
+                this.draftDay.kebaikan.lain = document.getElementById('input-kebaikan-lain').value.trim();
+                this.draftDay.updatedAt = new Date().toISOString();
+
+                // Pertahankan status paraf & catatan guru dari server jika sudah ada
+                if (prevDay && (prevDay.paraf === true || prevDay.parafGuru === true)) {
+                    this.draftDay.paraf = true;
+                    this.draftDay.parafGuru = true;
+                    if (prevDay.catatanGuru) this.draftDay.catatanGuru = prevDay.catatanGuru;
+                }
+
+                this.data.days[key] = JSON.parse(JSON.stringify(this.draftDay));
+
+                // Sinkronkan selisih jumlah ayat tadarus ke progres khatam
+                if (newJumlah !== prevJumlah) {
+                    const diff = newJumlah - prevJumlah;
+                    this.data.quranProgress.totalAyat = Math.max(0, (this.data.quranProgress.totalAyat || 0) + diff);
+                }
+
+                const ok = await this.persistData();
+                btn.disabled = false;
+                icon.className = 'ph-fill ph-floppy-disk text-lg';
+
+                if (ok) {
+                    this.renderDayPills();
+                    this.renderQuranProgress();
+                    this.showToast(`Alhamdulillah! Jurnal Hari ke-${key} tersimpan.`);
+                }
+            }
+
+            // -----------------------------------------------------------------
+            // 4. TAB 2: AL-QUR'AN, 2 KHAT, SMART BOOKMARK, & 1 KLIK SELESAI
+            // -----------------------------------------------------------------
+            getNextReadingTarget() {
+                const bm = this.data.quranProgress && this.data.quranProgress.lastBookmark;
+                if (!bm || !bm.nomorSurah) return null;
+
+                const isFinished = bm.totalAyat && bm.ayatTerakhir >= bm.totalAyat;
+                if (isFinished) {
+                    const nextNo = bm.nomorSurah >= 114 ? 1 : bm.nomorSurah + 1;
+                    const nextSurahObj = (this.surahList || []).find(s => s.nomor === nextNo) ||
+                        FALLBACK_SURAHS.find(s => s.nomor === nextNo);
+                    return {
+                        nomorSurah: nextNo,
+                        namaSurah: nextSurahObj ? nextSurahObj.namaLatin : `Surah ke-${nextNo}`,
+                        nextAyat: 1,
+                        prevSurahName: bm.namaSurah,
+                        prevAyat: bm.ayatTerakhir,
+                        surahCompleted: true
+                    };
+                }
+
+                return {
+                    nomorSurah: bm.nomorSurah,
+                    namaSurah: bm.namaSurah,
+                    nextAyat: (bm.ayatTerakhir || 0) + 1,
+                    prevSurahName: bm.namaSurah,
+                    prevAyat: bm.ayatTerakhir,
+                    surahCompleted: false
+                };
+            }
+
+            recalculateTotalAyat() {
+                const sp = this.data.quranProgress.surahProgress || {};
+                const sumSurah = Object.values(sp).reduce((acc, v) => acc + (Number(v) || 0), 0);
+                let sumDays = 0;
+                Object.values(this.data.days || {}).forEach(d => {
+                    sumDays += Number((d.tadarus && (d.tadarus.jumlahAyat ?? d.tadarus.jumlah)) || 0);
+                });
+                this.data.quranProgress.totalAyat = Math.max(sumSurah, sumDays);
+            }
+
+            renderQuranProgress() {
+                const qp = this.data.quranProgress;
+                const total = Number(qp.totalAyat || 0);
+                const pct = Math.min(100, (total / TOTAL_QURAN_AYAT) * 100);
+
+                document.getElementById('quran-total-ayat').textContent = total.toLocaleString('id-ID');
+                document.getElementById('quran-pct-badge').textContent = `${pct.toFixed(1)}%`;
+                document.getElementById('quran-progress-bar').style.width = `${pct}%`;
+
+                const card = document.getElementById('smart-bookmark-card');
+                const lastEl = document.getElementById('smart-bookmark-last');
+                const nextEl = document.getElementById('smart-bookmark-next');
+                const nextInfo = this.getNextReadingTarget();
+
+                if (nextInfo) {
+                    card.classList.remove('hidden');
+                    lastEl.textContent = `Terakhir: ${nextInfo.prevSurahName} Ayat ${nextInfo.prevAyat}${nextInfo.surahCompleted ? ' (Tamat)' : ''}`;
+                    nextEl.textContent = `→ Lanjut otomatis mulai ${nextInfo.namaSurah} Ayat ${nextInfo.nextAyat}`;
+                } else {
+                    card.classList.add('hidden');
+                }
+            }
+
+            async fetchSurahList() {
+                const container = document.getElementById('surah-list-container');
+                container.innerHTML = `<div class="text-center py-8 text-xs text-slate-400"><i class="ph ph-spinner animate-spin text-2xl mb-2 block mx-auto"></i>Memuat daftar 114 surah...</div>`;
+                try {
+                    const res = await fetch('https://equran.id/api/v2/surat');
+                    if (!res.ok) throw new Error('API error');
+                    const json = await res.json();
+                    if (json && Array.isArray(json.data) && json.data.length > 0) {
+                        this.surahList = json.data;
+                        document.getElementById('quran-api-note').classList.add('hidden');
+                        this.renderQuranProgress();
+                        this.renderSurahList(this.surahList);
+                        return;
+                    }
+                    throw new Error('Format kosong');
+                } catch (e) {
+                    console.warn('Menggunakan fallback daftar surah offline:', e);
+                    this.surahList = FALLBACK_SURAHS;
+                    document.getElementById('quran-api-note').classList.remove('hidden');
+                    this.renderQuranProgress();
+                    this.renderSurahList(this.surahList);
+                }
+            }
+
+            renderSurahList(list) {
+                const container = document.getElementById('surah-list-container');
+                if (!list || list.length === 0) {
+                    container.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">Surah tidak ditemukan.</p>`;
+                    return;
+                }
+                const sp = (this.data.quranProgress && this.data.quranProgress.surahProgress) || {};
+
+                container.innerHTML = list.map(s => {
+                    const readCount = Number(sp[String(s.nomor)] || 0);
+                    const isTamat = readCount >= s.jumlahAyat;
+                    let progBadge = '';
+                    if (isTamat) {
+                        progBadge = `<span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[9px] font-extrabold">Tamat ✓</span>`;
+                    } else if (readCount > 0) {
+                        progBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[9px] font-mono font-bold">${readCount}/${s.jumlahAyat} ayat</span>`;
+                    }
+
+                    return `
+                        <button type="button" onclick="app.openSurah(${s.nomor})"
+                            class="w-full glass-panel p-3.5 rounded-2xl flex items-center justify-between gap-3 hover:border-emerald-400 transition active:scale-[0.99] text-left ${isTamat ? 'border-emerald-500/35' : ''}">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-9 h-9 rounded-xl ${isTamat ? 'bg-emerald-500 text-white' : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'} font-mono font-bold text-xs flex items-center justify-center shrink-0">
+                                    ${s.nomor}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <h4 class="text-xs font-extrabold text-slate-800 dark:text-white truncate">${s.namaLatin}</h4>
+                                        ${progBadge}
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">${s.arti} • ${s.jumlahAyat} Ayat</p>
+                                </div>
+                            </div>
+                            <span class="font-arab text-xl text-emerald-700 dark:text-emerald-300 shrink-0">${s.nama}</span>
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            filterSurahList() {
+                const q = document.getElementById('quran-search').value.toLowerCase().trim();
+                const filtered = this.surahList.filter(s =>
+                    s.namaLatin.toLowerCase().includes(q) ||
+                    (s.arti && s.arti.toLowerCase().includes(q)) ||
+                    String(s.nomor) === q
+                );
+                this.renderSurahList(filtered);
+            }
+
+            continueLastSurah() {
+                const nextInfo = this.getNextReadingTarget();
+                if (!nextInfo) return;
+                this.openSurah(nextInfo.nomorSurah, nextInfo.nextAyat);
+            }
+
+            /**
+             * Dual API Fetch:
+             * 1. equran.id/api/v2/surat/{nomor} -> Mushaf Indonesia (default), teks latin, terjemahan Indonesia.
+             * 2. api.quran.com/api/v4/quran/verses/uthmani_tajweed?chapter_number={nomor} -> Utsmani Tajwid Berwarna.
+             * Fallback otomatis ke 6 surah offline lengkap bila internet terputus.
+             */
+            async openSurah(nomor, scrollToAyat = null) {
+                this.pendingScrollAyat = scrollToAyat;
+                this.resetConfirmArmed = false;
+
+                document.getElementById('quran-list-view').classList.add('hidden');
+                document.getElementById('quran-reader-view').classList.remove('hidden');
+                document.getElementById('reader-bismillah-card').classList.add('hidden');
+                const ayatWrap = document.getElementById('reader-ayat-container');
+                ayatWrap.innerHTML = `<div class="text-center py-10 text-xs text-slate-400"><i class="ph ph-spinner animate-spin text-2xl mb-2 block mx-auto"></i>Memuat ayat Al-Qur'an...</div>`;
+
+                const fallback = FALLBACK_SURAHS.find(s => s.nomor === nomor);
+
+                try {
+                    const [eqRes, tajRes] = await Promise.allSettled([
+                        fetch(`https://equran.id/api/v2/surat/${nomor}`).then(r => { if (!r.ok) throw new Error('equran'); return r.json(); }),
+                        fetch(`https://api.quran.com/api/v4/quran/verses/uthmani_tajweed?chapter_number=${nomor}`).then(r => { if (!r.ok) throw new Error('qurancom'); return r.json(); })
+                    ]);
+
+                    let surahData = null;
+                    if (eqRes.status === 'fulfilled' && eqRes.value && eqRes.value.data && eqRes.value.data.ayat) {
+                        surahData = JSON.parse(JSON.stringify(eqRes.value.data));
+                    } else if (fallback) {
+                        surahData = JSON.parse(JSON.stringify(fallback));
+                    } else {
+                        throw new Error('Tidak dapat memuat data surah');
+                    }
+
+                    // Peta teks tajwid dari Quran.com berdasarkan nomor ayat
+                    const tajwidMap = {};
+                    let hasOnlineTajwid = false;
+                    if (tajRes.status === 'fulfilled' && tajRes.value && Array.isArray(tajRes.value.verses)) {
+                        tajRes.value.verses.forEach(v => {
+                            if (v.verse_key && v.text_uthmani_tajweed) {
+                                const parts = v.verse_key.split(':');
+                                const num = parseInt(parts[1], 10);
+                                if (!isNaN(num)) {
+                                    tajwidMap[num] = v.text_uthmani_tajweed;
+                                    hasOnlineTajwid = true;
+                                }
+                            }
+                        });
+                    }
+
+                    // Gabungkan teks tajwid ke setiap ayat
+                    surahData.ayat = surahData.ayat.map(a => {
+                        const fbAyat = fallback ? fallback.ayat.find(fa => fa.nomorAyat === a.nomorAyat) : null;
+                        const tajHtml = tajwidMap[a.nomorAyat] || a.teksTajwid || (fbAyat && fbAyat.teksTajwid) || '';
+                        return { ...a, teksTajwid: tajHtml };
+                    });
+
+                    this.currentSurah = surahData;
+                    this.currentTajwidSource = hasOnlineTajwid
+                        ? 'Utsmani Tajwid'
+                        : (surahData.ayat.some(a => a.teksTajwid) ? 'Tajwid Offline' : 'Mushaf Indonesia');
+
+                    this.renderSurahReader();
+
+                    // Auto-scroll halus ke ayat berikutnya jika diminta (dari tombol Lanjutkan)
+                    if (this.pendingScrollAyat) {
+                        const targetNum = this.pendingScrollAyat;
+                        this.pendingScrollAyat = null;
+                        setTimeout(() => {
+                            const targetEl = document.getElementById(`ayat-card-${targetNum}`);
+                            if (targetEl) {
+                                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }, 180);
+                    }
+                } catch (e) {
+                    console.warn('Gagal memuat surah:', e);
+                    ayatWrap.innerHTML = `<div class="glass-panel rounded-2xl p-6 text-center text-xs text-rose-500">Gagal memuat surah. Periksa koneksi internet atau pilih 6 surah offline (Al-Fatihah, Al-Asr, Al-Kausar, Al-Ikhlas, Al-Falaq, An-Nas).</div>`;
+                }
+            }
+
+            renderSurahReader() {
+                const s = this.currentSurah;
+                if (!s) return;
+
+                document.getElementById('reader-surah-title').textContent = `${s.nomor}. ${s.namaLatin}`;
+                document.getElementById('reader-surah-meta').textContent = `${s.jumlahAyat} Ayat • ${s.tempatTurun || ''}`;
+
+                const srcBadge = document.getElementById('tajwid-source-badge');
+                if (srcBadge) srcBadge.textContent = this.currentTajwidSource;
+
+                // Tampilkan header Bismillah (kecuali Al-Fatihah no. 1 dan At-Taubah no. 9)
+                const bismillahCard = document.getElementById('reader-bismillah-card');
+                if (s.nomor !== 1 && s.nomor !== 9) {
+                    bismillahCard.classList.remove('hidden');
+                } else {
+                    bismillahCard.classList.add('hidden');
+                }
+
+                const sp = (this.data.quranProgress && this.data.quranProgress.surahProgress) || {};
+                const prevRead = Number(sp[String(s.nomor)] || 0);
+                const nextStartAyat = prevRead > 0 && prevRead < s.jumlahAyat ? prevRead + 1 : null;
+
+                // Tombol Reset Penanda Surah (hanya tampil jika surah ini sudah ada progres)
+                const btnReset = document.getElementById('btn-reset-surah');
+                if (btnReset) {
+                    btnReset.classList.toggle('hidden', prevRead === 0);
+                    btnReset.textContent = this.resetConfirmArmed ? 'Klik Lagi untuk Reset' : 'Reset Penanda Surah';
+                }
+
+                const isTajwid = this.khatMode === 'tajwid';
+                const ayatWrap = document.getElementById('reader-ayat-container');
+                const safeSurahName = s.namaLatin.replace(/'/g, "\\'");
+
+                ayatWrap.innerHTML = s.ayat.map(a => {
+                    const isRead = a.nomorAyat <= prevRead;
+                    const isNextStart = a.nomorAyat === nextStartAyat;
+                    const arabicDisplay = (isTajwid && a.teksTajwid) ? a.teksTajwid : a.teksArab;
+
+                    return `
+                        <div id="ayat-card-${a.nomorAyat}" class="glass-panel rounded-3xl p-4 sm:p-5 space-y-3 transition ${isNextStart ? 'border-2 border-amber-400 bg-amber-500/5 ayat-next-target' : (isRead ? 'border-emerald-500/45 bg-emerald-500/5' : '')}">
+                            ${isNextStart ? `
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 text-[10px] font-extrabold shadow-sm">
+                                    <i class="ph-fill ph-play-circle text-xs"></i>
+                                    <span>Mulai Sesi Ini di Sini (Ayat ${a.nomorAyat})</span>
+                                </div>
+                            ` : ''}
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="w-7 h-7 rounded-lg ${isRead ? 'bg-emerald-500 text-white' : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'} font-mono text-[11px] font-extrabold flex items-center justify-center shrink-0">${a.nomorAyat}</span>
+                                ${isRead
+                                    ? `<span class="px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold flex items-center gap-1">
+                                           <i class="ph-fill ph-check-circle text-xs"></i> Sudah Dibaca ✓
+                                       </span>`
+                                    : `<button type="button" onclick="app.finishSessionAtAyat(${s.nomor}, '${safeSurahName}', ${a.nomorAyat}, ${s.jumlahAyat})"
+                                           class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-extrabold flex items-center gap-1.5 shadow-sm transition active:scale-95">
+                                           <i class="ph-fill ph-bookmark-simple text-xs"></i>
+                                           <span>Selesai Sampai Ayat Ini</span>
+                                       </button>`
+                                }
+                            </div>
+                            <p class="arabic-text text-slate-900 dark:text-white">${arabicDisplay}</p>
+                            <div class="trans-block space-y-1.5 pt-2.5 border-t border-slate-200/70 dark:border-slate-700/60 ${this.showTranslation ? '' : 'hidden'}">
+                                <p class="text-[11px] italic text-emerald-700 dark:text-emerald-300 leading-relaxed">${a.teksLatin}</p>
+                                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${a.teksIndonesia}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                this.applyReaderPrefsUI();
+            }
+
+            closeSurahReader() {
+                document.getElementById('quran-reader-view').classList.add('hidden');
+                document.getElementById('quran-list-view').classList.remove('hidden');
+                this.renderSurahList(this.surahList);
+            }
+
+            toggleTranslation() {
+                this.showTranslation = !this.showTranslation;
+                document.getElementById('btn-toggle-trans').textContent = `Terjemah: ${this.showTranslation ? 'ON' : 'OFF'}`;
+                document.querySelectorAll('.trans-block').forEach(el => el.classList.toggle('hidden', !this.showTranslation));
+            }
+
+            /**
+             * Sistem 1 Klik "Selesai Sampai Ayat Ini":
+             * - Hitung startAyat otomatis (prev + 1 jika melanjutkan, atau 1 jika baru/mengulang)
+             * - Tandai ayat 1..N pada surahProgress & perbarui lastBookmark
+             * - Otomatis isi / akumulasi form Tadarus di Tab Jurnal Hari Aktif
+             */
+            async finishSessionAtAyat(surahNo, surahName, targetAyat, totalAyatSurah) {
+                if (!this.data.quranProgress.surahProgress) this.data.quranProgress.surahProgress = {};
+                if (!Array.isArray(this.data.quranProgress.readLogs)) this.data.quranProgress.readLogs = [];
+
+                const prevRead = Number(this.data.quranProgress.surahProgress[String(surahNo)] || 0);
+                const startAyat = (prevRead > 0 && prevRead < targetAyat) ? (prevRead + 1) : 1;
+                const jumlahAyatSesi = Math.max(1, targetAyat - startAyat + 1);
+
+                // Tandai seluruh rentang 1..targetAyat sebagai sudah dibaca
+                this.data.quranProgress.surahProgress[String(surahNo)] = Math.max(prevRead, targetAyat);
+                this.data.quranProgress.lastBookmark = {
+                    nomorSurah: surahNo,
+                    namaSurah: surahName,
+                    ayatTerakhir: targetAyat,
+                    totalAyat: totalAyatSurah
+                };
+                // Pertahankan field lama demi kompatibilitas
+                this.data.quranProgress.lastSurah = surahNo;
+                this.data.quranProgress.lastSurahName = surahName;
+                this.data.quranProgress.lastAyat = targetAyat;
+
+                // Otomatis isi / akumulasi Tadarus di Jurnal Hari Aktif
+                const dayKey = String(this.activeDay);
+                if (!this.data.days[dayKey]) this.data.days[dayKey] = this.getEmptyDay();
+                const prevTad = this.data.days[dayKey].tadarus || {};
+                const prevDayCount = Number(prevTad.jumlahAyat ?? prevTad.jumlah ?? 0);
+
+                if (prevDayCount > 0 && prevTad.surah) {
+                    if (prevTad.surah === surahName) {
+                        // Lanjutan di surah yang sama pada hari yang sama
+                        const mergedAwal = Math.min(Number(prevTad.awal) || startAyat, startAyat);
+                        const mergedAkhir = Math.max(Number(prevTad.akhir) || targetAyat, targetAyat);
+                        const totalHariIni = prevDayCount + jumlahAyatSesi;
+                        this.data.days[dayKey].tadarus = {
+                            surah: surahName,
+                            awal: mergedAwal,
+                            akhir: mergedAkhir,
+                            jumlah: totalHariIni,
+                            jumlahAyat: totalHariIni
+                        };
+                    } else {
+                        // Membaca lebih dari 1 surah di hari yang sama -> gabungkan nama surah & akumulasi ayat
+                        const surahCombined = prevTad.surah.includes(surahName)
+                            ? prevTad.surah
+                            : `${prevTad.surah}, ${surahName}`;
+                        const totalHariIni = prevDayCount + jumlahAyatSesi;
+                        this.data.days[dayKey].tadarus = {
+                            surah: surahCombined,
+                            awal: startAyat,
+                            akhir: targetAyat,
+                            jumlah: totalHariIni,
+                            jumlahAyat: totalHariIni
+                        };
+                    }
+                } else {
+                    // Sesi pertama hari ini
+                    this.data.days[dayKey].tadarus = {
+                        surah: surahName,
+                        awal: startAyat,
+                        akhir: targetAyat,
+                        jumlah: jumlahAyatSesi,
+                        jumlahAyat: jumlahAyatSesi
+                    };
+                }
+
+                this.recalculateTotalAyat();
+                await this.persistData();
+
+                this.renderQuranProgress();
+                this.renderSurahReader();
+                this.loadDayForm(this.activeDay);
+                this.renderDayPills();
+
+                const nextMsg = targetAyat < totalAyatSurah
+                    ? `Sesi berikutnya otomatis mulai dari ayat ${targetAyat + 1}!`
+                    : `Surah ${surahName} tamat! Sesi berikutnya lanjut ke surah selanjutnya.`;
+                this.showToast(`Tercatat di Jurnal Hari ke-${dayKey}: ${surahName} ayat ${startAyat}–${targetAyat} (${jumlahAyatSesi} ayat). ${nextMsg}`);
+            }
+
+            async logFullSurah() {
+                if (!this.currentSurah) return;
+                const s = this.currentSurah;
+                await this.finishSessionAtAyat(s.nomor, s.namaLatin, s.jumlahAyat, s.jumlahAyat);
+            }
+
+            async resetCurrentSurahProgress() {
+                if (!this.currentSurah) return;
+                // Konfirmasi 2-klik aman tanpa confirm()
+                if (!this.resetConfirmArmed) {
+                    this.resetConfirmArmed = true;
+                    const btn = document.getElementById('btn-reset-surah');
+                    if (btn) btn.textContent = 'Klik Lagi untuk Reset';
+                    this.showToast('Klik sekali lagi untuk mereset penanda surah ini');
+                    return;
+                }
+
+                const s = this.currentSurah;
+                this.resetConfirmArmed = false;
+                if (this.data.quranProgress.surahProgress) {
+                    delete this.data.quranProgress.surahProgress[String(s.nomor)];
+                }
+                if (this.data.quranProgress.lastBookmark && this.data.quranProgress.lastBookmark.nomorSurah === s.nomor) {
+                    this.data.quranProgress.lastBookmark = null;
+                }
+                this.recalculateTotalAyat();
+                await this.persistData();
+                this.renderQuranProgress();
+                this.renderSurahReader();
+                this.showToast(`Penanda QS. ${s.namaLatin} direset ke awal.`);
+            }
+
+            // -----------------------------------------------------------------
+            // 5. TAB 3: 30 MISI HARIAN RAMADHAN
+            // -----------------------------------------------------------------
+            renderMissionsGrid() {
+                const doneCount = Object.keys(this.data.missionsCompleted || {}).length;
+                document.getElementById('misi-stars-count').textContent = this.data.stars || 0;
+                document.getElementById('misi-lantern-count').textContent = doneCount;
+
+                const grid = document.getElementById('missions-grid');
+                grid.innerHTML = MISSIONS_30.map(m => {
+                    const isDone = !!this.data.missionsCompleted[String(m.day)];
+                    return `
+                        <button type="button" onclick="app.openMission(${m.day})"
+                            class="glass-panel p-3.5 rounded-2xl text-left flex flex-col justify-between gap-2 transition active:scale-95 ${isDone ? 'border-amber-400/60 bg-amber-500/10' : 'hover:border-emerald-400'}">
+                            <div class="flex items-center justify-between w-full">
+                                <span class="text-[10px] font-extrabold font-mono px-2 py-0.5 rounded-lg ${isDone ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'}">Hari ${m.day}</span>
+                                <i class="ph-fill ${isDone ? 'ph-star text-amber-400 text-lg' : 'ph-lock-open text-slate-400 text-sm'}"></i>
+                            </div>
+                            <h4 class="text-xs font-extrabold text-slate-800 dark:text-white leading-snug line-clamp-2">${m.title}</h4>
+                            <span class="text-[10px] font-bold ${isDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
+                                ${isDone ? 'Selesai • +10 Bintang' : 'Buka Misi →'}
+                            </span>
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            openMission(day) {
+                const m = MISSIONS_30.find(x => x.day === day);
+                if (!m) return;
+                this.activeMission = m;
+                const alreadyDone = !!this.data.missionsCompleted[String(day)];
+                this.missionCaseDone = alreadyDone;
+                this.missionQuizDone = alreadyDone;
+
+                document.getElementById('mm-day-badge').textContent = `Misi Hari ke-${m.day}`;
+                document.getElementById('mm-title').textContent = m.title;
+                document.getElementById('mm-hikmah').textContent = m.hikmah;
+                document.getElementById('mm-case-text').textContent = m.cText;
+                document.getElementById('mm-quiz-q').textContent = m.q;
+
+                document.getElementById('mm-case-feedback').classList.add('hidden');
+                document.getElementById('mm-quiz-feedback').classList.add('hidden');
+
+                document.getElementById('mm-case-options').innerHTML = m.cOpts.map((opt, idx) => `
+                    <button type="button" onclick="app.chooseCase(${idx})"
+                        class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-left text-xs font-medium hover:border-amber-400 transition">
+                        ${opt}
+                    </button>
+                `).join('');
+
+                document.getElementById('mm-quiz-options').innerHTML = m.qOpts.map((opt, idx) => `
+                    <button type="button" onclick="app.chooseQuiz(${idx})"
+                        class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-left text-xs font-semibold hover:border-indigo-400 transition">
+                        ${String.fromCharCode(65 + idx)}. ${opt}
+                    </button>
+                `).join('');
+
+                this.updateClaimButton();
+                document.getElementById('mission-modal').classList.remove('hidden');
+            }
+
+            chooseCase(idx) {
+                const m = this.activeMission;
+                if (!m) return;
+                const fb = document.getElementById('mm-case-feedback');
+                fb.classList.remove('hidden');
+
+                if (idx === m.cGood) {
+                    this.missionCaseDone = true;
+                    fb.className = 'text-[11px] font-semibold px-3 py-2 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300';
+                    fb.textContent = 'Pilihan akhlak yang tepat! Semoga Allah mudahkan kita mengamalkannya.';
+                } else {
+                    fb.className = 'text-[11px] font-semibold px-3 py-2 rounded-xl bg-rose-500/15 text-rose-700 dark:text-rose-300';
+                    fb.textContent = 'Kurang tepat. Coba pilih sikap yang lebih mencerminkan akhlak mulia pelajar muslim.';
+                }
+                this.updateClaimButton();
+            }
+
+            chooseQuiz(idx) {
+                const m = this.activeMission;
+                if (!m) return;
+                const fb = document.getElementById('mm-quiz-feedback');
+                fb.classList.remove('hidden');
+
+                if (idx === m.qAns) {
+                    this.missionQuizDone = true;
+                    fb.className = 'text-[11px] font-semibold px-3 py-2.5 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300';
+                    fb.innerHTML = `<strong>Benar!</strong> ${m.qExp}`;
+                } else {
+                    fb.className = 'text-[11px] font-semibold px-3 py-2.5 rounded-xl bg-rose-500/15 text-rose-700 dark:text-rose-300';
+                    fb.textContent = 'Belum tepat, silakan coba pilih jawaban lainnya.';
+                }
+                this.updateClaimButton();
+            }
+
+            updateClaimButton() {
+                const btn = document.getElementById('btn-claim-mission');
+                const txt = document.getElementById('claim-btn-text');
+                const m = this.activeMission;
+                if (!m) return;
+                const alreadyDone = !!this.data.missionsCompleted[String(m.day)];
+
+                if (alreadyDone) {
+                    btn.disabled = true;
+                    txt.textContent = 'Bintang & Lentera Sudah Diklaim';
+                } else if (this.missionCaseDone && this.missionQuizDone) {
+                    btn.disabled = false;
+                    txt.textContent = 'Klaim +10 Bintang & +1 Lentera!';
+                } else {
+                    btn.disabled = true;
+                    txt.textContent = 'Selesaikan Langkah 1 & 2 untuk Klaim';
+                }
+            }
+
+            async claimMission() {
+                const m = this.activeMission;
+                if (!m) return;
+                const key = String(m.day);
+                if (this.data.missionsCompleted[key]) return;
+
+                this.data.missionsCompleted[key] = true;
+                this.data.stars = Number(this.data.stars || 0) + 10;
+
+                await this.persistData();
+                this.renderHeader();
+                this.renderDayPills();
+                this.renderMissionsGrid();
+                this.renderBadgesAndStats();
+                this.closeMissionModal();
+                this.showToast(`Misi Hari ke-${m.day} selesai! +10 Bintang & +1 Lentera`);
+            }
+
+            closeMissionModal() {
+                document.getElementById('mission-modal').classList.add('hidden');
+                this.activeMission = null;
+            }
+
+            // -----------------------------------------------------------------
+            // 6. TAB 4: STATISTIK & 12 LENCANA APRESIASI PRIBADI
+            // -----------------------------------------------------------------
+            computeStats() {
+                const daysObj = this.data.days || {};
+                const filledDays = Object.keys(daysObj).length;
+                let puasaPenuh = 0;
+                let sholatDone = 0;
+                let sholatJamaah = 0;
+                let subuhCount = 0;
+                let kultumCount = 0;
+                let kebaikanCount = 0;
+                let tadarusDaysAyat = 0;
+
+                Object.values(daysObj).forEach(d => {
+                    if (d.puasa === 'penuh') puasaPenuh++;
+                    const sh = d.sholat || {};
+                    SHOLAT_WAJIB.forEach(s => {
+                        if (sh[s.key] === 'sendiri' || sh[s.key] === 'jamaah') {
+                            sholatDone++;
+                            if (s.key === 'subuh') subuhCount++;
+                        }
+                        if (sh[s.key] === 'jamaah') sholatJamaah++;
+                    });
+                    if (d.kultum && d.kultum.ringkasan && d.kultum.ringkasan.trim().length > 3) kultumCount++;
+                    const kb = d.kebaikan || {};
+                    KEBAIKAN_ITEMS.forEach(k => { if (kb[k.key]) kebaikanCount++; });
+                    if (kb.lain && kb.lain.trim()) kebaikanCount++;
+                    const jml = Number(d.tadarus && (d.tadarus.jumlahAyat ?? d.tadarus.jumlah) || 0);
+                    if (jml > 0) tadarusDaysAyat += jml;
+                });
+
+                const totalAyat = Math.max(Number(this.data.quranProgress.totalAyat || 0), tadarusDaysAyat);
+                const misiCount = Object.keys(this.data.missionsCompleted || {}).length;
+                const totalSlotSholat = Math.max(1, filledDays * 5);
+                const sholatPct = filledDays > 0 ? Math.round((sholatDone / totalSlotSholat) * 100) : 0;
+                const jamaahPct = filledDays > 0 ? Math.round((sholatJamaah / totalSlotSholat) * 100) : 0;
+
+                return {
+                    filledDays, puasaPenuh, sholatPct, jamaahPct, sholatJamaah,
+                    subuhCount, totalAyat, kultumCount, kebaikanCount, misiCount
+                };
+            }
+
+            renderBadgesAndStats() {
+                const st = this.computeStats();
+                document.getElementById('stat-filled').textContent = st.filledDays;
+                document.getElementById('stat-puasa').textContent = st.puasaPenuh;
+                document.getElementById('stat-sholat').textContent = `${st.sholatPct}%`;
+                document.getElementById('stat-jamaah').textContent = `${st.jamaahPct}%`;
+                document.getElementById('stat-ayat').textContent = st.totalAyat;
+                document.getElementById('stat-misi').textContent = st.misiCount;
+
+                const badges = [
+                    { title: 'Langkah Pertama', desc: 'Isi 1 hari jurnal', icon: 'ph-footprints', cur: st.filledDays, target: 1 },
+                    { title: 'Pejuang Subuh', desc: 'Subuh 7 hari', icon: 'ph-sun-horizon', cur: st.subuhCount, target: 7 },
+                    { title: 'Ahli Jamaah', desc: '25 sholat berjamaah', icon: 'ph-mosque', cur: st.sholatJamaah, target: 25 },
+                    { title: 'Istiqomah 7 Hari', desc: 'Isi 7 hari jurnal', icon: 'ph-calendar-check', cur: st.filledDays, target: 7 },
+                    { title: 'Istiqomah 15 Hari', desc: 'Isi 15 hari jurnal', icon: 'ph-flame', cur: st.filledDays, target: 15 },
+                    { title: 'Khatam Bulan', desc: 'Isi penuh 30 hari', icon: 'ph-crown', cur: st.filledDays, target: 30 },
+                    { title: 'Pecinta Qur\'an', desc: 'Tadarus 50 ayat', icon: 'ph-book-open-text', cur: st.totalAyat, target: 50 },
+                    { title: 'Tadarus 300 Ayat', desc: 'Tadarus 300 ayat', icon: 'ph-books', cur: st.totalAyat, target: 300 },
+                    { title: 'Pendengar Hikmah', desc: '5 catatan kultum', icon: 'ph-microphone-stage', cur: st.kultumCount, target: 5 },
+                    { title: 'Tangan Di Atas', desc: '15 kebaikan harian', icon: 'ph-hand-heart', cur: st.kebaikanCount, target: 15 },
+                    { title: 'Pemburu Misi', desc: 'Selesaikan 10 misi', icon: 'ph-sparkle', cur: st.misiCount, target: 10 },
+                    { title: 'Master Ramadhan', desc: '25 misi & 20 puasa', icon: 'ph-trophy', cur: Math.min(st.misiCount, 25) + Math.min(st.puasaPenuh, 20), target: 45 }
+                ];
+
+                let unlocked = 0;
+                const grid = document.getElementById('badges-grid');
+                grid.innerHTML = badges.map(b => {
+                    const isOpen = b.cur >= b.target;
+                    if (isOpen) unlocked++;
+                    const pct = Math.min(100, Math.round((b.cur / b.target) * 100));
+                    return `
+                        <div class="p-3 rounded-2xl border transition ${isOpen
+                            ? 'bg-gradient-to-br from-amber-500/15 to-emerald-500/10 border-amber-400/50 shadow-sm'
+                            : 'bg-slate-100/70 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/70 opacity-75'}">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xl shrink-0 ${isOpen
+                                    ? 'bg-amber-400 text-slate-950 shadow-sm'
+                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-400'}">
+                                    <i class="ph-fill ${b.icon}"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="text-[11px] font-extrabold truncate text-slate-800 dark:text-white">${b.title}</h4>
+                                    <p class="text-[9px] text-slate-500 dark:text-slate-400 truncate">${b.desc}</p>
+                                </div>
+                            </div>
+                            <div class="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                <div class="h-full rounded-full ${isOpen ? 'bg-emerald-500' : 'bg-slate-400'}" style="width: ${pct}%"></div>
+                            </div>
+                            <div class="flex justify-between text-[9px] font-mono font-bold mt-1 ${isOpen ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
+                                <span>${Math.min(b.cur, b.target)}/${b.target}</span>
+                                <span>${isOpen ? 'TERBUKA' : pct + '%'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('badge-unlocked-count').textContent = unlocked;
+            }
+
+            // -----------------------------------------------------------------
+            // 7. CETAK / UNDUH PDF A4 FORMAL (3 KOLOM TANDA TANGAN)
+            // -----------------------------------------------------------------
+            printPDF() {
+                const container = document.getElementById('print-report');
+                const days = this.data.days || {};
+                const symSholat = (v) => v === 'jamaah' ? 'J' : (v === 'sendiri' ? 'S' : '-');
+                const symPuasa = (v) => v === 'penuh' ? 'Penuh' : (v === 'setengah' ? '1/2' : (v === 'tidak' || v === 'halangan' ? 'Udzur' : '-'));
+
+                let rowsHtml = '';
+                let kultumListHtml = '';
+
+                for (let i = 1; i <= 30; i++) {
+                    const d = days[String(i)];
+                    const sh = (d && d.sholat) || {};
+                    const sun = (d && d.sunnah) || {};
+                    const tad = (d && d.tadarus) || {};
+                    const tadJml = tad.jumlahAyat ?? tad.jumlah ?? '';
+                    const tadText = tad.surah ? `${tad.surah} (${tad.awal || 1}-${tad.akhir || tadJml})` : '-';
+                    const isParaf = d && (d.paraf === true || d.parafGuru === true);
+
+                    rowsHtml += `
+                        <tr>
+                            <td><strong>${i}</strong></td>
+                            <td>${d ? symPuasa(d.puasa) : '-'}</td>
+                            <td>${symSholat(sh.subuh)}</td>
+                            <td>${symSholat(sh.dzuhur)}</td>
+                            <td>${symSholat(sh.ashar)}</td>
+                            <td>${symSholat(sh.maghrib)}</td>
+                            <td>${symSholat(sh.isya)}</td>
+                            <td>${sun.tarawih ? 'Ya' : '-'}</td>
+                            <td style="text-align:left;">${tadText}</td>
+                            <td>${isParaf ? '✓ Sah' : ''}</td>
+                        </tr>
+                    `;
+
+                    if (d && d.kultum && d.kultum.ringkasan && d.kultum.ringkasan.trim()) {
+                        kultumListHtml += `
+                            <li style="margin-bottom:4px;">
+                                <strong>Hari ke-${i}</strong> (${d.kultum.tempat || '-'} • ${d.kultum.penceramah || 'Penceramah'}):
+                                ${d.kultum.ringkasan}
+                            </li>
+                        `;
+                    }
+                }
+
+                container.innerHTML = `
+                    <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:8px; margin-bottom:12px;">
+                        <h1 style="font-size:16px; font-weight:800; letter-spacing:1px; margin:0;">BUKU KEGIATAN RAMADHAN 1448 H</h1>
+                        <p style="font-size:11px; margin:2px 0 0 0;">Portal Siswa Terintegrasi • SAKTI</p>
+                    </div>
+
+                    <table style="width:100%; font-size:11px; margin-bottom:10px;">
+                        <tr>
+                            <td style="width:14%;"><strong>Nama Siswa</strong></td>
+                            <td style="width:42%;">: ${this.data.nama}</td>
+                            <td style="width:14%;"><strong>Kelas</strong></td>
+                            <td style="width:30%;">: ${this.data.kelas}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>NIS</strong></td>
+                            <td>: ${this.data.nis}</td>
+                            <td><strong>Total Tadarus</strong></td>
+                            <td>: ${this.data.quranProgress.totalAyat || 0} Ayat</td>
+                        </tr>
+                    </table>
+
+                    <p style="font-size:9px; margin:0 0 6px 0; color:#334155;">
+                        <em>Keterangan Sholat: <strong>J</strong> = Berjamaah, <strong>S</strong> = Sendiri, <strong>-</strong> = Belum/Tidak</em>
+                    </p>
+
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th style="width:5%;">Hari</th>
+                                <th style="width:10%;">Puasa</th>
+                                <th style="width:6%;">Sbh</th>
+                                <th style="width:6%;">Dzh</th>
+                                <th style="width:6%;">Ash</th>
+                                <th style="width:6%;">Mgh</th>
+                                <th style="width:6%;">Isy</th>
+                                <th style="width:8%;">Tarawih</th>
+                                <th style="width:35%;">Tadarus Al-Qur'an</th>
+                                <th style="width:12%;">Paraf Guru</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+
+                    <div class="print-break-avoid" style="margin-top:14px;">
+                        <h3 style="font-size:12px; font-weight:700; margin:0 0 6px 0; border-bottom:1px solid #cbd5e1; padding-bottom:3px;">Rangkuman Catatan Kultum / Siraman Rohani</h3>
+                        ${kultumListHtml
+                            ? `<ul style="font-size:10px; padding-left:16px; margin:0;">${kultumListHtml}</ul>`
+                            : `<p style="font-size:10px; color:#64748b; margin:0;">Belum ada catatan kultum yang diisi.</p>`}
+                    </div>
+
+                    <div class="print-break-avoid" style="display:flex; justify-content:space-between; margin-top:26px; font-size:10.5px; text-align:center; gap:12px;">
+                        <div style="width:33%;">
+                            <p style="margin:0;">Mengetahui,<br>Orang Tua / Wali Siswa</p>
+                            <div style="height:54px;"></div>
+                            <p style="margin:0; border-top:1px solid #0f172a; display:inline-block; padding-top:2px; min-width:135px;">( ................................ )</p>
+                        </div>
+                        <div style="width:33%;">
+                            <p style="margin:0;">Diperiksa oleh,<br>Guru PAI / Wali Kelas</p>
+                            <div style="height:54px;"></div>
+                            <p style="margin:0; border-top:1px solid #0f172a; display:inline-block; padding-top:2px; min-width:135px;">( ................................ )</p>
+                        </div>
+                        <div style="width:33%;">
+                            <p style="margin:0;">Dibuat oleh,<br>Siswa Yang Bersangkutan</p>
+                            <div style="height:54px;"></div>
+                            <p style="margin:0; border-top:1px solid #0f172a; display:inline-block; padding-top:2px; min-width:135px;"><strong>${this.data.nama}</strong></p>
+                        </div>
+                    </div>
+                `;
+
+                window.print();
+            }
+        }
+
+        window.app = new BukuRamadhanApp();
+    </script>
+</body>
+</html>
