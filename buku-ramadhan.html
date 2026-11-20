@@ -809,7 +809,7 @@
     <!-- LOGIKA APLIKASI & FIREBASE v11.6.1 MODULAR                            -->
     <!-- ===================================================================== -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
@@ -1131,31 +1131,32 @@
                 this.missionCaseDone = false;
                 this.missionQuizDone = false;
                 this.toastTimer = null;
+                this.draftDay = this.getEmptyDay();
 
                 // Struktur data utama (sinkron dengan Firestore & pantau-ramadhan.html)
                 this.data = {
-                    nis: '2425.10.001',
-                    nama: 'Ahmad Fauzan',
-                    kelas: 'XI MIPA 1',
-                    tahun: '1448H',
-                    updatedAt: new Date().toISOString(),
-                    days: {},
-                    quranProgress: {
-                        totalAyat: 0,
-                        lastBookmark: null, // { nomorSurah, namaSurah, ayatTerakhir, totalAyat }
-                        surahProgress: {},  // { [nomorSurah]: ayatTerakhir }
-                        lastSurah: null,
-                        lastSurahName: '',
-                        lastAyat: 0,
-                        readLogs: []
-                    },
-                    missionsCompleted: {},
-                    stars: 0
-                };
+            // Helper aman untuk akses localStorage (anti SecurityError di iframe/sandbox)
+            safeGetStorage(key) {
+                try { return localStorage.getItem(key); } catch (_) { return null; }
+            }
 
-                this.initTheme();
-                this.initReaderPrefs();
-                this.bootstrap();
+            safeSetStorage(key, val) {
+                try { localStorage.setItem(key, val); } catch (_) {}
+            }
+
+            // Sinkronisasi tema dengan Portal Siswa (localStorage.theme)
+            initTheme() {
+                const savedTheme = this.safeGetStorage('theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+
+            toggleTheme() {
+                document.documentElement.classList.toggle('dark');
+                this.safeSetStorage('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
             }
 
             // Sinkronisasi tema dengan Portal Siswa (localStorage.theme)
@@ -1268,13 +1269,14 @@
 
             // Inisialisasi Firebase v11.6.1 atau Fallback ke Mode Pratinjau
             async bootstrap() {
-                const savedConfig = localStorage.getItem('sakti_school_config');
-                const savedNis = localStorage.getItem('student_nis');
+                const savedConfig = this.safeGetStorage('sakti_school_config');
+                const savedNis = this.safeGetStorage('student_nis');
 
                 if (savedConfig && savedNis) {
                     try {
                         const configObj = JSON.parse(savedConfig);
-                        const fbApp = initializeApp(configObj, 'RamadhanSchoolApp');
+                        const existingApp = getApps().find(a => a.name === 'RamadhanSchoolApp');
+                        const fbApp = existingApp || initializeApp(configObj, 'RamadhanSchoolApp');
                         const auth = getAuth(fbApp);
                         this.db = getFirestore(fbApp);
                         await signInAnonymously(auth);
@@ -1972,7 +1974,6 @@
 
                 const isTajwid = this.khatMode === 'tajwid';
                 const ayatWrap = document.getElementById('reader-ayat-container');
-                const safeSurahName = s.namaLatin.replace(/'/g, "\\'");
 
                 ayatWrap.innerHTML = s.ayat.map(a => {
                     const isRead = a.nomorAyat <= prevRead;
@@ -1993,7 +1994,7 @@
                                     ? `<span class="px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold flex items-center gap-1">
                                            <i class="ph-fill ph-check-circle text-xs"></i> Sudah Dibaca ✓
                                        </span>`
-                                    : `<button type="button" onclick="app.finishSessionAtAyat(${s.nomor}, '${safeSurahName}', ${a.nomorAyat}, ${s.jumlahAyat})"
+                                    : `<button type="button" onclick="app.finishSessionAtAyat(${a.nomorAyat})"
                                            class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-extrabold flex items-center gap-1.5 shadow-sm transition active:scale-95">
                                            <i class="ph-fill ph-bookmark-simple text-xs"></i>
                                            <span>Selesai Sampai Ayat Ini</span>
@@ -2017,20 +2018,21 @@
                 document.getElementById('quran-list-view').classList.remove('hidden');
                 this.renderSurahList(this.surahList);
             }
+            async finishSessionAtAyat(surahNoOrAyat, surahNameArg, targetAyatArg, totalAyatArg) {
+                let surahNo, surahName, targetAyat, totalAyatSurah;
+                if (arguments.length === 1 && this.currentSurah) {
+                    surahNo = this.currentSurah.nomor;
+                    surahName = this.currentSurah.namaLatin;
+                    targetAyat = Number(surahNoOrAyat);
+                    totalAyatSurah = this.currentSurah.jumlahAyat;
+                } else {
+                    surahNo = surahNoOrAyat;
+                    surahName = surahNameArg;
+                    targetAyat = Number(targetAyatArg);
+                    totalAyatSurah = totalAyatArg;
+                }
+                if (!surahNo || !targetAyat) return;
 
-            toggleTranslation() {
-                this.showTranslation = !this.showTranslation;
-                document.getElementById('btn-toggle-trans').textContent = `Terjemah: ${this.showTranslation ? 'ON' : 'OFF'}`;
-                document.querySelectorAll('.trans-block').forEach(el => el.classList.toggle('hidden', !this.showTranslation));
-            }
-
-            /**
-             * Sistem 1 Klik "Selesai Sampai Ayat Ini":
-             * - Hitung startAyat otomatis (prev + 1 jika melanjutkan, atau 1 jika baru/mengulang)
-             * - Tandai ayat 1..N pada surahProgress & perbarui lastBookmark
-             * - Otomatis isi / akumulasi form Tadarus di Tab Jurnal Hari Aktif
-             */
-            async finishSessionAtAyat(surahNo, surahName, targetAyat, totalAyatSurah) {
                 if (!this.data.quranProgress.surahProgress) this.data.quranProgress.surahProgress = {};
                 if (!Array.isArray(this.data.quranProgress.readLogs)) this.data.quranProgress.readLogs = [];
 
