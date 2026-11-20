@@ -1135,6 +1135,29 @@
 
                 // Struktur data utama (sinkron dengan Firestore & pantau-ramadhan.html)
                 this.data = {
+                    nis: '2425.10.001',
+                    nama: 'Ahmad Fauzan',
+                    kelas: 'XI MIPA 1',
+                    days: {},
+                    quranProgress: {
+                        totalAyat: 0,
+                        lastBookmark: null,
+                        surahProgress: {},
+                        lastSurah: null,
+                        lastSurahName: '',
+                        lastAyat: 0,
+                        readLogs: []
+                    },
+                    missionsCompleted: {},
+                    stars: 0,
+                    updatedAt: new Date().toISOString()
+                };
+
+                this.initTheme();
+                this.initReaderPrefs();
+                this.bootstrap();
+            }
+
             // Helper aman untuk akses localStorage (anti SecurityError di iframe/sandbox)
             safeGetStorage(key) {
                 try { return localStorage.getItem(key); } catch (_) { return null; }
@@ -1157,20 +1180,6 @@
             toggleTheme() {
                 document.documentElement.classList.toggle('dark');
                 this.safeSetStorage('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-            }
-
-            // Sinkronisasi tema dengan Portal Siswa (localStorage.theme)
-            initTheme() {
-                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            }
-
-            toggleTheme() {
-                document.documentElement.classList.toggle('dark');
-                localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
             }
 
             // Inisialisasi Preferensi Pembaca Al-Qur'an (Ukuran Huruf & Pilihan 2 Versi Khat)
@@ -2018,6 +2027,16 @@
                 document.getElementById('quran-list-view').classList.remove('hidden');
                 this.renderSurahList(this.surahList);
             }
+
+            toggleTranslation() {
+                this.showTranslation = !this.showTranslation;
+                const btn = document.getElementById('btn-toggle-trans');
+                if (btn) btn.textContent = this.showTranslation ? 'Terjemah: ON' : 'Terjemah: OFF';
+                document.querySelectorAll('#reader-ayat-container .trans-block').forEach(el => {
+                    el.classList.toggle('hidden', !this.showTranslation);
+                });
+            }
+
             async finishSessionAtAyat(surahNoOrAyat, surahNameArg, targetAyatArg, totalAyatArg) {
                 let surahNo, surahName, targetAyat, totalAyatSurah;
                 if (arguments.length === 1 && this.currentSurah) {
